@@ -1,0 +1,72 @@
+import type { CategoryDef } from './types';
+
+export const ACADEMY_BASE = 'https://kood-review-academy-prototype-sxyr.vercel.app/academy';
+
+export const CATEGORIES: CategoryDef[] = [
+	{
+		id: 'readability',
+		title: 'Code Readability',
+		assignee: 'joe',
+		academyHint: 'cat-functional',
+		observations: [
+			{ id: 'r1', text: 'Code is easy to understand at first glance' },
+			{ id: 'r2', text: 'Code flow is logical and easy to follow' },
+			{ id: 'r3', text: 'Naming conveys intent for modules and functions' },
+			{ id: 'r4', text: 'Dead code and noise are removed or justified' }
+		]
+	},
+	{
+		id: 'security',
+		title: 'Security',
+		assignee: 'jane',
+		academyHint: 'cat-security',
+		observations: [
+			{ id: 's1', text: 'Inputs are validated and sanitized where needed' },
+			{ id: 's2', text: 'Secrets are not committed or logged' },
+			{ id: 's3', text: 'Authorization boundaries are respected' },
+			{ id: 's4', text: 'Risky dependencies are reviewed, not ignored' }
+		]
+	},
+	{
+		id: 'exceptions',
+		title: 'Exception Handling',
+		assignee: 'jane',
+		academyHint: 'cat-exceptions',
+		observations: [
+			{ id: 'e1', text: 'Errors are handled at appropriate boundaries' },
+			{ id: 'e2', text: 'User-facing errors are safe and helpful' },
+			{ id: 'e3', text: 'Logging includes actionable context' },
+			{ id: 'e4', text: 'Failures degrade gracefully' }
+		]
+	},
+	{
+		id: 'comments',
+		title: 'How to Write Comments',
+		assignee: 'joe',
+		academyHint: 'cat-comments',
+		observations: [
+			{ id: 'c1', text: 'Complex logic includes explanatory comments' },
+			{ id: 'c2', text: 'Comments match behavior (not stale)' },
+			{ id: 'c3', text: 'Public APIs are documented' },
+			{ id: 'c4', text: 'TODOs reference tickets or owners' }
+		]
+	}
+];
+
+export function emptyChecks(categoryId: string): Record<string, boolean> {
+	const cat = CATEGORIES.find((c) => c.id === categoryId);
+	const o: Record<string, boolean> = {};
+	cat?.observations.forEach((obs) => {
+		o[obs.id] = false;
+	});
+	return o;
+}
+
+export function emptyDraftComments(categoryId: string): Record<string, string> {
+	const cat = CATEGORIES.find((c) => c.id === categoryId);
+	const o: Record<string, string> = {};
+	cat?.observations.forEach((obs) => {
+		o[obs.id] = '';
+	});
+	return o;
+}

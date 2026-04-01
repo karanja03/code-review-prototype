@@ -1,0 +1,25 @@
+@import 'tailwindcss';
+
+/* //kood reference palette */
+@theme {
+	--color-kood-bg: #24282f;
+	--color-kood-surface: #2f343c;
+	--color-kood-surface-raised: #383e47;
+	--color-kood-accent: #dcf900;
+	--color-kood-accent-foreground: #0a0a0a;
+	--color-kood-text: #e6e6e7;
+	--color-kood-muted: #9ca3af;
+	--color-kood-border: #3d434c;
+	--color-kood-danger: #f87171;
+	--color-kood-danger-bg: rgba(248, 113, 113, 0.12);
+	--color-kood-warn-border: rgba(251, 191, 36, 0.35);
+}
+
+@layer base {
+	:global(html),
+	:global(body) {
+		background-color: var(--color-kood-bg);
+		color: var(--color-kood-text);
+		-webkit-font-smoothing: antialiased;
+	}
+}
