@@ -112,7 +112,8 @@ function createInitialSnapshot() {
 		sandraRatings: defaultSandraRatings(),
 		reviewerRatings: defaultReviewerRatings(),
 		xpMock: 0,
-		leaderboardNote: 'Feedback feeds XP and the leaderboard (mock).'
+		leaderboardNote: 'Feedback feeds XP and the leaderboard (mock).',
+		reviewerAssignmentAccepted: { jane: false, joe: false }
 	};
 }
 
@@ -127,6 +128,18 @@ function normalizeStandupItems(parsed: unknown, fallback: boolean[]): boolean[] 
 		next[i] = i < parsed.length ? Boolean(parsed[i]) : false;
 	}
 	return next;
+}
+
+function normalizeReviewerAssignmentAccepted(
+	parsed: unknown,
+	fallback: { jane: boolean; joe: boolean }
+): { jane: boolean; joe: boolean } {
+	if (!parsed || typeof parsed !== 'object') return { ...fallback };
+	const o = parsed as Record<string, unknown>;
+	return {
+		jane: typeof o.jane === 'boolean' ? o.jane : fallback.jane,
+		joe: typeof o.joe === 'boolean' ? o.joe : fallback.joe
+	};
 }
 
 function load(): Snapshot {
@@ -152,7 +165,11 @@ function load(): Snapshot {
 			standupVoiceChannel:
 				typeof p.standupVoiceChannel === 'string' ? p.standupVoiceChannel : base.standupVoiceChannel,
 			standupTakeaways:
-				typeof p.standupTakeaways === 'string' ? p.standupTakeaways : base.standupTakeaways
+				typeof p.standupTakeaways === 'string' ? p.standupTakeaways : base.standupTakeaways,
+			reviewerAssignmentAccepted: normalizeReviewerAssignmentAccepted(
+				p.reviewerAssignmentAccepted,
+				base.reviewerAssignmentAccepted
+			)
 		};
 	} catch {
 		return createInitialSnapshot();
@@ -187,7 +204,19 @@ export function setRole(role: Role) {
 export function confirmStartProject() {
 	data.projectStarted = true;
 	data.phase = 'project_completion';
+	data.reviewerAssignmentAccepted = { jane: false, joe: false };
 	pushToast('Project started — complete the brief, then submit for review.');
+}
+
+export function acceptReviewerAssignment(reviewer: 'jane' | 'joe') {
+	data.reviewerAssignmentAccepted[reviewer] = true;
+	pushToast(`${reviewer === 'jane' ? 'Jane' : 'Joe'}: assignment accepted — you can review.`);
+}
+
+export function reviewerNeedsAssignmentGate(role: Role): boolean {
+	if (role !== 'jane' && role !== 'joe') return false;
+	if (!data.projectStarted) return false;
+	return !data.reviewerAssignmentAccepted[role];
 }
 
 export function confirmSubmitForReview() {
@@ -200,6 +229,9 @@ export function setTestingVerdict(itemId: string, reviewer: 'jane' | 'joe', verd
 	if (data.role !== reviewer) return;
 	const item = data.testingItems.find((t) => t.id === itemId);
 	if (!item) return;
+	if (item.section === 'mandatory' && item.mandatoryOwner && item.mandatoryOwner !== reviewer) {
+		return;
+	}
 	item[reviewer] = verdict;
 }
 
@@ -262,13 +294,33 @@ export function reviewerCommentCount(item: TestingItem) {
 	return item.comments.filter((c) => c.author === 'jane' || c.author === 'joe').length;
 }
 
+/** Mandatory complete when each row is Accepted by its single assigned owner (Jane or Joe). */
+export function mandatoryOwnerAccepted(t: TestingItem): boolean {
+	if (t.section !== 'mandatory' || !t.mandatoryOwner) return false;
+	return t[t.mandatoryOwner] === 'accept';
+}
+
 export function allMandatoryDoubleAccepted() {
-	return mandatoryItems().every((t) => t.jane === 'accept' && t.joe === 'accept');
+	return mandatoryItems().every(mandatoryOwnerAccepted);
+}
+
+/** How many mandatory rows are accepted by their owner. */
+export function mandatoryOwnedAcceptedCount(): number {
+	return mandatoryItems().filter(mandatoryOwnerAccepted).length;
+}
+
+/** For one reviewer: how many they own vs accepted (mandatory only). */
+export function mandatoryProgressForReviewer(reviewer: 'jane' | 'joe'): { owned: number; accepted: number } {
+	const mine = mandatoryItems().filter((t) => t.mandatoryOwner === reviewer);
+	return {
+		owned: mine.length,
+		accepted: mine.filter((t) => t[reviewer] === 'accept').length
+	};
 }
 
 export function goToCodeReview() {
 	if (!allMandatoryDoubleAccepted()) {
-		pushToast('Jane and Joe must each Accept every mandatory item.');
+		pushToast('Each mandatory check must be Accepted by its assigned reviewer (Jane or Joe).');
 		return;
 	}
 	data.phase = 'code_review';
@@ -510,6 +562,10 @@ export function resetPrototype() {
 	data.testingRound = fresh.testingRound;
 	data.categorySessions = fresh.categorySessions;
 	data.standupItems = fresh.standupItems;
+	data.standupWhen = fresh.standupWhen;
+	data.standupVoiceChannel = fresh.standupVoiceChannel;
+	data.standupTakeaways = fresh.standupTakeaways;
+	data.reviewerAssignmentAccepted = fresh.reviewerAssignmentAccepted;
 	data.sandraRatings = fresh.sandraRatings;
 	data.reviewerRatings = fresh.reviewerRatings;
 	data.xpMock = fresh.xpMock;

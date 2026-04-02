@@ -29,8 +29,16 @@
 	const isSandra = $derived(app.role === 'sandra');
 	const self = $derived(app.role === 'jane' || app.role === 'joe' ? app.role : null);
 	const peer = $derived(self === 'jane' ? 'joe' : self === 'joe' ? 'jane' : null);
-	const flagged = $derived(item.jane === 'decline' || item.joe === 'decline');
+	const owner = $derived(item.mandatoryOwner ?? null);
+	const flagged = $derived(
+		item.section === 'mandatory' && owner
+			? item[owner] === 'decline'
+			: item.jane === 'decline' || item.joe === 'decline'
+	);
 	const n = $derived(reviewerCommentCount(item));
+	const canSetVerdict = $derived(
+		isReviewer && self && (item.section !== 'mandatory' || !owner || owner === self)
+	);
 </script>
 
 <div
@@ -39,29 +47,17 @@
 		: 'border-kood-border'}"
 >
 	<div class="flex items-start gap-2 px-3 py-2.5">
-		<button
-			type="button"
-			class="mt-0.5 shrink-0 p-0 text-kood-muted hover:text-kood-text"
-			aria-expanded={open}
-			aria-label={open ? 'Collapse row' : 'Expand row'}
-			onclick={onToggle}
-		>
-			<svg
-				class="size-3.5 transition-transform duration-150 {open ? 'rotate-90' : ''}"
-				viewBox="0 0 12 12"
-				fill="none"
-				stroke="currentColor"
-				stroke-width="1.25"
-				stroke-linecap="round"
-				stroke-linejoin="round"
-				aria-hidden="true"
-			>
-				<path d="M4.5 2.5 7.5 6l-3 3.5" />
-			</svg>
-		</button>
 		<div class="min-w-0 flex-1">
 			<div class="flex flex-wrap items-center gap-2">
 				<span class="font-mono text-[10px] uppercase tracking-wide text-kood-muted">{item.id}</span>
+				{#if item.section === 'mandatory' && owner}
+					<span
+						class="rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ring-1 {owner === 'jane'
+							? 'bg-kood-accent/15 text-kood-accent ring-kood-accent/30'
+							: 'bg-kood-surface-raised text-kood-text/90 ring-kood-border'}"
+						>{owner === 'jane' ? 'Jane owns' : 'Joe owns'}</span
+					>
+				{/if}
 				{#if flagged}
 					<span class="text-[10px] font-semibold uppercase text-amber-400/90">Attention</span>
 				{/if}
@@ -81,6 +77,26 @@
 				{n}
 			</div>
 		{/if}
+		<button
+			type="button"
+			class="mt-0.5 shrink-0 p-1 text-kood-muted hover:text-kood-text"
+			aria-expanded={open}
+			aria-label={open ? 'Collapse row' : 'Expand row'}
+			onclick={onToggle}
+		>
+			<svg
+				class="size-3.5 transition-transform duration-150 {open ? 'rotate-90' : ''}"
+				viewBox="0 0 12 12"
+				fill="none"
+				stroke="currentColor"
+				stroke-width="1.25"
+				stroke-linecap="round"
+				stroke-linejoin="round"
+				aria-hidden="true"
+			>
+				<path d="M4.5 2.5 7.5 6l-3 3.5" />
+			</svg>
+		</button>
 	</div>
 
 	<div
@@ -88,25 +104,49 @@
 		role="group"
 		aria-label="Verdicts and quick actions"
 	>
-		<span class="rounded px-2 py-0.5 ring-1 {verdictChipClass(item.jane)}">J · {verdictLabel(item.jane)}</span>
-		<span class="rounded px-2 py-0.5 ring-1 {verdictChipClass(item.joe)}">Joe · {verdictLabel(item.joe)}</span>
-		{#if isReviewer && self}
+		{#if item.section === 'mandatory' && owner}
+			{#if owner === 'jane'}
+				<span class="rounded px-2 py-0.5 ring-1 {verdictChipClass(item.jane)}"
+					>Jane · {verdictLabel(item.jane)}</span
+				>
+				<span
+					class="rounded px-2 py-0.5 text-kood-muted/80 ring-1 ring-kood-border/60"
+					title="Peer follows along; no separate verdict on this row">Joe · observes</span
+				>
+			{:else}
+				<span
+					class="rounded px-2 py-0.5 text-kood-muted/80 ring-1 ring-kood-border/60"
+					title="Peer follows along; no separate verdict on this row">Jane · observes</span
+				>
+				<span class="rounded px-2 py-0.5 ring-1 {verdictChipClass(item.joe)}"
+					>Joe · {verdictLabel(item.joe)}</span
+				>
+			{/if}
+		{:else}
+			<span class="rounded px-2 py-0.5 ring-1 {verdictChipClass(item.jane)}">J · {verdictLabel(item.jane)}</span>
+			<span class="rounded px-2 py-0.5 ring-1 {verdictChipClass(item.joe)}">Joe · {verdictLabel(item.joe)}</span>
+		{/if}
+		{#if canSetVerdict}
 			<div class="ml-auto flex flex-wrap gap-1">
 				<button
 					type="button"
-					class="rounded px-2 py-0.5 text-[11px] font-medium {item[self] === 'decline'
+					class="rounded px-2 py-0.5 text-[11px] font-medium {item[self!] === 'decline'
 						? 'bg-red-500/15 text-red-300 ring-1 ring-red-400/35'
 						: 'bg-kood-bg text-kood-text/80 ring-1 ring-kood-border hover:bg-kood-surface-raised'}"
-					onclick={() => setTestingVerdict(item.id, self, 'decline')}>Decline</button
+					onclick={() => setTestingVerdict(item.id, self!, 'decline')}>Decline</button
 				>
 				<button
 					type="button"
-					class="rounded px-2 py-0.5 text-[11px] font-medium {item[self] === 'accept'
+					class="rounded px-2 py-0.5 text-[11px] font-medium {item[self!] === 'accept'
 						? 'bg-kood-accent/20 text-kood-accent ring-1 ring-kood-accent/40'
 						: 'bg-kood-bg text-kood-text/80 ring-1 ring-kood-border hover:bg-kood-surface-raised'}"
-					onclick={() => setTestingVerdict(item.id, self, 'accept')}>Accept</button
+					onclick={() => setTestingVerdict(item.id, self!, 'accept')}>Accept</button
 				>
 			</div>
+		{:else if isReviewer && self && item.section === 'mandatory' && owner && owner !== self}
+			<p class="ml-auto max-w-[14rem] text-right text-[11px] text-kood-muted">
+				Only {owner === 'jane' ? 'Jane' : 'Joe'} Accepts/Declines — you can expand to read &amp; comment.
+			</p>
 		{/if}
 		{#if isSandra && !open}
 			<p class="ml-auto text-[11px] text-kood-muted">Expand for thread</p>
@@ -116,9 +156,24 @@
 	{#if open}
 		<div class="space-y-3 border-t border-kood-border px-3 pb-3 pt-2.5">
 			{#if isReviewer && self && peer}
-				<p class="text-[11px] text-kood-muted">
-					{peer === 'jane' ? 'Jane' : 'Joe'}: {verdictLabel(item[peer])} (read-only)
-				</p>
+				{#if item.section === 'mandatory' && owner}
+					{#if owner === self}
+						<p class="text-[11px] text-kood-muted">
+							{peer === 'jane' ? 'Jane' : 'Joe'} can read along and comment; they do not submit a verdict on this
+							row.
+						</p>
+					{:else}
+						<p class="text-[11px] text-kood-muted">
+							<strong class="text-kood-text/80">{owner === 'jane' ? 'Jane' : 'Joe'}</strong> owns this check ·
+							currently <strong class="text-kood-text/80">{verdictLabel(item[owner])}</strong>. Your notes in the
+							thread still help the submitter.
+						</p>
+					{/if}
+				{:else}
+					<p class="text-[11px] text-kood-muted">
+						{peer === 'jane' ? 'Jane' : 'Joe'}: {verdictLabel(item[peer])} (read-only)
+					</p>
+				{/if}
 			{/if}
 
 			{#if isSandra}

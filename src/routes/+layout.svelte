@@ -26,7 +26,8 @@
 			sandraRatings: app.sandraRatings,
 			reviewerRatings: app.reviewerRatings,
 			xpMock: app.xpMock,
-			leaderboardNote: app.leaderboardNote
+			leaderboardNote: app.leaderboardNote,
+			reviewerAssignmentAccepted: app.reviewerAssignmentAccepted
 		};
 		localStorage.setItem(APP_STATE_STORAGE_KEY, JSON.stringify(snap));
 	});

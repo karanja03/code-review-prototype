@@ -3,12 +3,14 @@ import type { TestingItem } from '$lib/types';
 function row(
 	id: string,
 	section: 'mandatory' | 'extra',
-	text: string
+	text: string,
+	mandatoryOwner?: 'jane' | 'joe'
 ): TestingItem {
 	return {
 		id,
 		section,
 		text,
+		mandatoryOwner: section === 'mandatory' ? mandatoryOwner : undefined,
 		jane: 'pending',
 		joe: 'pending',
 		verdictHistory: [],
@@ -17,9 +19,22 @@ function row(
 	};
 }
 
+/** First ceil(n/2) mandatory rows → Jane, rest → Joe (stable order in array). */
+export function withMandatoryOwners(items: TestingItem[]): TestingItem[] {
+	const mandatoryCount = items.filter((t) => t.section === 'mandatory').length;
+	const janeCount = Math.ceil(mandatoryCount / 2);
+	let mi = 0;
+	return items.map((t) => {
+		if (t.section !== 'mandatory') return t;
+		const owner: 'jane' | 'joe' = mi < janeCount ? 'jane' : 'joe';
+		mi += 1;
+		return { ...t, mandatoryOwner: owner };
+	});
+}
+
 /** Full Mobile Messenger testing checklist (mandatory + extra). */
 export function createFullTestingItems(): TestingItem[] {
-	return [
+	const raw = [
 		row('m1', 'mandatory', 'Repository contains complete source code and configuration files.'),
 		row(
 			'm2',
@@ -121,4 +136,5 @@ export function createFullTestingItems(): TestingItem[] {
 			'Application uses additional technologies/features beyond core requirements (bonus).'
 		)
 	];
+	return withMandatoryOwners(raw);
 }

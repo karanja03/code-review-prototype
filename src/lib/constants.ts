@@ -8,6 +8,8 @@ export const CATEGORIES: CategoryDef[] = [
 		title: 'Code Readability',
 		assignee: 'joe',
 		academyHint: 'cat-functional',
+		assignmentBlurb:
+			'Can a teammate follow the story—structure, naming, and flow—without reverse‑engineering every file?',
 		observations: [
 			{ id: 'r1', text: 'Code is easy to understand at first glance' },
 			{ id: 'r2', text: 'Code flow is logical and easy to follow' },
@@ -20,6 +22,8 @@ export const CATEGORIES: CategoryDef[] = [
 		title: 'Security',
 		assignee: 'jane',
 		academyHint: 'cat-security',
+		assignmentBlurb:
+			'Inputs, secrets, auth boundaries, and dependencies—think like a friendly attacker, not a judge.',
 		observations: [
 			{ id: 's1', text: 'Inputs are validated and sanitized where needed' },
 			{ id: 's2', text: 'Secrets are not committed or logged' },
@@ -32,6 +36,8 @@ export const CATEGORIES: CategoryDef[] = [
 		title: 'Exception Handling',
 		assignee: 'jane',
 		academyHint: 'cat-exceptions',
+		assignmentBlurb:
+			'When things break: safe user‑facing messages, useful logs, and graceful degradation—not silent fails.',
 		observations: [
 			{ id: 'e1', text: 'Errors are handled at appropriate boundaries' },
 			{ id: 'e2', text: 'User-facing errors are safe and helpful' },
@@ -44,6 +50,8 @@ export const CATEGORIES: CategoryDef[] = [
 		title: 'How to Write Comments',
 		assignee: 'joe',
 		academyHint: 'cat-comments',
+		assignmentBlurb:
+			'Comments that explain why, docs that match the code, and TODOs that actually have an owner.',
 		observations: [
 			{ id: 'c1', text: 'Complex logic includes explanatory comments' },
 			{ id: 'c2', text: 'Comments match behavior (not stale)' },

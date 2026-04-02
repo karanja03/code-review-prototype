@@ -1,6 +1,7 @@
 <script lang="ts">
-	import { getApp } from '$lib/appState.svelte';
+	import { getApp, reviewerNeedsAssignmentGate } from '$lib/appState.svelte';
 	import ProjectBriefing from '$lib/features/briefing/ProjectBriefing.svelte';
+	import ReviewerBriefingWait from '$lib/features/briefing/ReviewerBriefingWait.svelte';
 	import CodeReviewView from '$lib/features/code-review/CodeReviewView.svelte';
 	import AcceptView from '$lib/features/project-flow/AcceptView.svelte';
 	import Feedback360View from '$lib/features/project-flow/Feedback360View.svelte';
@@ -10,12 +11,15 @@
 	import DevJumpPanel from '$lib/features/shell/DevJumpPanel.svelte';
 	import KoodRightChrome from '$lib/features/shell/KoodRightChrome.svelte';
 	import KoodWorkflowPanel from '$lib/features/shell/KoodWorkflowPanel.svelte';
+	import ReviewerAssignmentPanel from '$lib/features/shell/ReviewerAssignmentPanel.svelte';
 	import RoleSwitcher from '$lib/features/shell/RoleSwitcher.svelte';
 	import SidebarMeta from '$lib/features/shell/SidebarMeta.svelte';
 	import TestingView from '$lib/features/testing/TestingView.svelte';
 	import ToastStack from '$lib/ui/ToastStack.svelte';
 
 	const app = getApp();
+
+	const reviewerGate = $derived(reviewerNeedsAssignmentGate(app.role));
 </script>
 
 <svelte:head>
@@ -54,7 +58,13 @@
 
 		<main class="min-w-0 flex-1 px-4 py-6 lg:px-10 lg:py-8">
 			{#if app.phase === 'briefing'}
-				<ProjectBriefing />
+				{#if app.role === 'sandra'}
+					<ProjectBriefing />
+				{:else}
+					<ReviewerBriefingWait />
+				{/if}
+			{:else if reviewerGate}
+				<ReviewerAssignmentPanel />
 			{:else if app.phase === 'project_completion'}
 				<ProjectCompletionView />
 			{:else if app.phase === 'testing'}

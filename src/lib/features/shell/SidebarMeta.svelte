@@ -29,6 +29,38 @@
 		</div>
 	{/if}
 
+	{#if app.projectStarted}
+		<div class="rounded-xl border border-kood-border bg-kood-surface p-3 text-xs">
+			<p class="font-semibold uppercase tracking-wide text-kood-muted">Reviewer assignment</p>
+			<p class="mt-2 text-kood-muted">Mobile Messenger — who has confirmed they will review.</p>
+			<ul class="mt-2 space-y-1.5 text-sm">
+				<li class="flex items-center justify-between gap-2">
+					<span class="text-kood-text/90">Jane</span>
+					<span
+						class="rounded-md px-2 py-0.5 text-[11px] font-medium {app.reviewerAssignmentAccepted.jane
+							? 'bg-kood-accent/20 text-kood-accent'
+							: 'bg-kood-surface-raised text-kood-muted'}">{app.reviewerAssignmentAccepted.jane
+							? 'Accepted'
+							: 'Pending'}</span
+					>
+				</li>
+				<li class="flex items-center justify-between gap-2">
+					<span class="text-kood-text/90">Joe</span>
+					<span
+						class="rounded-md px-2 py-0.5 text-[11px] font-medium {app.reviewerAssignmentAccepted.joe
+							? 'bg-kood-accent/20 text-kood-accent'
+							: 'bg-kood-surface-raised text-kood-muted'}">{app.reviewerAssignmentAccepted.joe
+							? 'Accepted'
+							: 'Pending'}</span
+					>
+				</li>
+			</ul>
+			{#if app.reviewerAssignmentAccepted.jane && app.reviewerAssignmentAccepted.joe}
+				<p class="mt-2 text-[11px] text-kood-accent/90">Both reviewers confirmed — good to proceed through testing.</p>
+			{/if}
+		</div>
+	{/if}
+
 	<div class="rounded-xl border border-kood-border bg-kood-surface p-3">
 		<p class="text-2xl font-semibold text-kood-text">XP {app.xpMock} / {PROJECT_MANDATORY_XP}</p>
 		<p class="text-xs text-kood-muted">Mock counter — nudges, standup, and ratings add XP.</p>

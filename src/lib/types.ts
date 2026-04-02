@@ -29,6 +29,8 @@ export interface TestingItem {
 	id: string;
 	section: 'mandatory' | 'extra';
 	text: string;
+	/** Mandatory only: exactly one reviewer owns Accept/Decline; the other observes (read-only). */
+	mandatoryOwner?: 'jane' | 'joe';
 	/** Each reviewer’s verdict for the current round. */
 	jane: TestingDecision;
 	joe: TestingDecision;
@@ -47,6 +49,8 @@ export interface CategoryDef {
 	title: string;
 	assignee: 'jane' | 'joe';
 	academyHint: string;
+	/** Short context on the reviewer assignment screen */
+	assignmentBlurb: string;
 	observations: ObservationDef[];
 }
 
