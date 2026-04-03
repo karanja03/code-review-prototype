@@ -2,7 +2,6 @@
 	import type { TestingItem } from '$lib/types';
 	import {
 		allMandatoryDoubleAccepted,
-		extraItems,
 		getApp,
 		goToCodeReview,
 		mandatoryItems,
@@ -13,43 +12,36 @@
 	} from '$lib/appState.svelte';
 	import TestingItemCard from './TestingItemCard.svelte';
 
-	const MANDATORY_PAGE_SIZE = 8;
-	const EXTRA_PAGE_SIZE = 8;
+	const MANDATORY_PAGE_SIZE = 5;
 
-	type MandatoryFilter = 'all' | 'jane_owned' | 'joe_owned';
+	type MandatoryFilter = 'jane_owned' | 'joe_owned';
 
 	const app = getApp();
 	const isReviewer = $derived(app.role === 'jane' || app.role === 'joe');
 	const isSandra = $derived(app.role === 'sandra');
 
-	let extraOpen = $state(true);
 	let expanded = $state<Record<string, boolean>>({});
 
 	let mandatoryPage = $state(0);
-	let extraPage = $state(0);
 
 	let mandatoryFilter = $state<MandatoryFilter>(
-		app.role === 'jane' ? 'jane_owned' : app.role === 'joe' ? 'joe_owned' : 'all'
+		app.role === 'joe' ? 'joe_owned' : 'jane_owned'
 	);
 
 	$effect(() => {
 		const r = app.role;
 		if (r === 'jane') mandatoryFilter = 'jane_owned';
 		else if (r === 'joe') mandatoryFilter = 'joe_owned';
-		else mandatoryFilter = 'all';
+		else mandatoryFilter = 'jane_owned';
 	});
 
-	const allIds = $derived([...mandatoryItems(), ...extraItems()].map((i) => i.id));
-
 	const mandatoryList = $derived(mandatoryItems());
-	const extraList = $derived(extraItems());
+	const allIds = $derived(mandatoryList.map((i) => i.id));
 
 	const mandatoryFiltered = $derived(
-		mandatoryFilter === 'all'
-			? mandatoryList
-			: mandatoryFilter === 'jane_owned'
-				? mandatoryList.filter((t) => t.mandatoryOwner === 'jane')
-				: mandatoryList.filter((t) => t.mandatoryOwner === 'joe')
+		mandatoryFilter === 'jane_owned'
+			? mandatoryList.filter((t) => t.mandatoryOwner === 'jane')
+			: mandatoryList.filter((t) => t.mandatoryOwner === 'joe')
 	);
 
 	const janeProg = $derived(mandatoryProgressForReviewer('jane'));
@@ -70,15 +62,6 @@
 		mandatoryFiltered.slice(
 			mandatoryPageSafe * MANDATORY_PAGE_SIZE,
 			mandatoryPageSafe * MANDATORY_PAGE_SIZE + MANDATORY_PAGE_SIZE
-		)
-	);
-
-	const extraPageCount = $derived(Math.max(1, Math.ceil(extraList.length / EXTRA_PAGE_SIZE)));
-	const extraPageSafe = $derived(Math.min(extraPage, extraPageCount - 1));
-	const extraSlice = $derived(
-		extraList.slice(
-			extraPageSafe * EXTRA_PAGE_SIZE,
-			extraPageSafe * EXTRA_PAGE_SIZE + EXTRA_PAGE_SIZE
 		)
 	);
 
@@ -120,10 +103,6 @@
 		mandatoryPage = Math.max(0, Math.min(n, mandatoryPageCount - 1));
 	}
 
-	function setExtraPage(n: number) {
-		extraPage = Math.max(0, Math.min(n, extraPageCount - 1));
-	}
-
 	function setFilter(f: MandatoryFilter) {
 		mandatoryFilter = f;
 		mandatoryPage = 0;
@@ -135,9 +114,8 @@
 		<h2 class="text-2xl font-semibold text-kood-text">Testing</h2>
 		<p class="mt-3 text-sm leading-relaxed text-kood-muted">
 			Mandatory checks are <strong class="text-kood-text/90">split between Jane and Joe</strong> — each row has one
-			owner who Accepts/Declines; the other reviewer reads along and can comment. Extra checks still use both
-			reviewers as before. Progress below always reflects the <strong class="text-kood-text/90">full</strong> mandatory
-			list.
+			owner who Accepts/Declines; the other reviewer reads along and can comment. Progress below always reflects the
+			<strong class="text-kood-text/90">full</strong> mandatory list.
 		</p>
 	</header>
 
@@ -257,16 +235,7 @@
 			</p>
 		</div>
 
-		<div class="mb-3 flex flex-wrap gap-2" role="tablist" aria-label="Which mandatory checks to show">
-			<button
-				type="button"
-				class="rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors {mandatoryFilter === 'all'
-					? 'border-kood-accent bg-kood-accent/15 text-kood-accent'
-					: 'border-kood-border text-kood-muted hover:bg-kood-surface-raised'}"
-				role="tab"
-				aria-selected={mandatoryFilter === 'all'}
-				onclick={() => setFilter('all')}>All ({mandatoryList.length})</button
-			>
+		<div class="mb-3 flex flex-wrap gap-2" role="tablist" aria-label="Jane’s vs Joe’s mandatory checks">
 			<button
 				type="button"
 				class="rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors {mandatoryFilter === 'jane_owned'
@@ -337,50 +306,6 @@
 				<TestingItemCard item={item} open={isOpen(item.id)} onToggle={() => toggle(item.id)} />
 			{/each}
 		</div>
-	</section>
-
-	<section>
-		<button
-			type="button"
-			class="flex w-full items-center justify-between gap-3 rounded-lg border border-kood-border bg-kood-surface px-4 py-3 text-left text-sm font-semibold text-kood-text hover:bg-kood-surface-raised"
-			onclick={() => (extraOpen = !extraOpen)}
-		>
-			<span>Extra</span>
-			<span class="text-kood-muted">{extraOpen ? '▾' : '▸'}</span>
-		</button>
-		{#if extraOpen}
-			<p class="mt-2 text-xs text-kood-muted">
-				Optional — both Jane and Joe still vote on each extra row (not split).
-			</p>
-
-			{#if extraPageCount > 1}
-				<div
-					class="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-kood-border bg-kood-bg/40 px-3 py-2"
-				>
-					<div class="flex flex-wrap items-center gap-2">
-						<button
-							type="button"
-							class="rounded-md border border-kood-border px-2 py-1 text-xs text-kood-text hover:bg-kood-surface-raised disabled:opacity-40"
-							disabled={extraPageSafe <= 0}
-							onclick={() => setExtraPage(extraPageSafe - 1)}>Previous</button
-						>
-						<button
-							type="button"
-							class="rounded-md border border-kood-border px-2 py-1 text-xs text-kood-text hover:bg-kood-surface-raised disabled:opacity-40"
-							disabled={extraPageSafe >= extraPageCount - 1}
-							onclick={() => setExtraPage(extraPageSafe + 1)}>Next</button
-						>
-						<span class="text-xs text-kood-muted">Page {extraPageSafe + 1} / {extraPageCount}</span>
-					</div>
-				</div>
-			{/if}
-
-			<div class="mt-3 space-y-2">
-				{#each extraSlice as item (item.id)}
-					<TestingItemCard item={item} open={isOpen(item.id)} onToggle={() => toggle(item.id)} />
-				{/each}
-			</div>
-		{/if}
 	</section>
 
 	{#if isSandra}
