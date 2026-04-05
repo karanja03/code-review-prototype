@@ -43,4 +43,13 @@
 			</div>
 		{/each}
 	</div>
+
+	<div class="mt-6 flex flex-wrap gap-3">
+		<button
+			type="button"
+			class="rounded-lg border border-kood-border bg-kood-surface-raised px-5 py-2.5 text-sm font-medium text-kood-text hover:bg-kood-surface"
+			onclick={() => window.open('https://kood-review-academy-prototype-sxyr.vercel.app/', '_blank')}
+			>Review categories again (academy)</button
+		>
+	</div>
 </div>

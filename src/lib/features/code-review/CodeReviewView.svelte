@@ -135,12 +135,6 @@
 			disabled={!allCategoriesComplete()}
 			onclick={() => goToStandup()}>Complete sprint → Standup</button
 		>
-		<button
-			type="button"
-			class="rounded-lg border border-kood-border bg-kood-surface-raised px-5 py-2.5 text-sm font-medium text-kood-text hover:bg-kood-surface"
-			onclick={() => window.open('https://kood-review-academy-prototype-sxyr.vercel.app/academy', '_blank')}
-			>Review categories again (academy)</button
-		>
 	</div>
 
 	{#if allCategoriesComplete()}
