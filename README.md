@@ -1,4 +1,4 @@
-# Code Review Sprint (//kood prototype)
+# Code Review prototype (//kood prototype)
 
 Low-fidelity **SvelteKit + Tailwind** prototype for the peer learning journey: collapsible project brief → phased sidebar → testing checklist → structured **code review sprint** (four categories, FIFO assign to Jane/Joe, read-only cross-visibility) → standup → accept → 360° feedback. State persists in `localStorage`.
 
