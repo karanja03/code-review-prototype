@@ -19,6 +19,7 @@
 			testingRound: app.testingRound,
 			testingItems: app.testingItems,
 			categorySessions: app.categorySessions,
+			codeReviewRound: app.codeReviewRound,
 			standupItems: app.standupItems,
 			standupWhen: app.standupWhen,
 			standupVoiceChannel: app.standupVoiceChannel,

@@ -1,10 +1,11 @@
 import { browser } from '$app/environment';
 import { createFullTestingItems } from '$lib/features/testing/checklist';
-import { CATEGORIES, emptyChecks, emptyDraftComments, ACADEMY_BASE } from './constants';
+import { CATEGORIES, emptyObservationRowsForCategory, ACADEMY_BASE } from './constants';
 import type {
 	CategorySession,
+	CodeReviewListEntry,
+	CodeReviewObservationRowState,
 	Phase,
-	ReviewIterationRecord,
 	Role,
 	SandraRating,
 	ReviewerRatingSet,
@@ -43,12 +44,7 @@ function initialCategorySessions(): Record<string, CategorySession> {
 	for (const c of CATEGORIES) {
 		m[c.id] = {
 			categoryId: c.id,
-			completed: false,
-			checks: emptyChecks(c.id),
-			lockedObservationIds: {},
-			draftComments: emptyDraftComments(c.id),
-			iterations: [],
-			pendingNudge: null
+			observationRows: emptyObservationRowsForCategory(c.id)
 		};
 	}
 	return m;
@@ -64,14 +60,31 @@ function mergeCategorySessions(
 		const a = base[id];
 		const b = patch[id];
 		if (!b) continue;
-		out[id] = {
-			...a,
-			...b,
-			lockedObservationIds:
-				b.lockedObservationIds && typeof b.lockedObservationIds === 'object'
-					? { ...b.lockedObservationIds }
-					: { ...a.lockedObservationIds }
-		};
+		if (!b.observationRows || typeof b.observationRows !== 'object') {
+			out[id] = { ...a };
+			continue;
+		}
+		const mergedRows: Record<string, CodeReviewObservationRowState> = {};
+		for (const obsId of Object.keys(a.observationRows)) {
+			const ar = a.observationRows[obsId];
+			const br = b.observationRows[obsId];
+			const ok =
+				br &&
+				(br.jane === 'pending' || br.jane === 'accept' || br.jane === 'decline') &&
+				(br.joe === 'pending' || br.joe === 'accept' || br.joe === 'decline');
+			if (!ok) {
+				mergedRows[obsId] = { ...ar };
+				continue;
+			}
+			mergedRows[obsId] = {
+				jane: br.jane,
+				joe: br.joe,
+				comments: Array.isArray(br.comments) ? br.comments.map((c) => ({ ...c })) : [],
+				drafts: br.drafts && typeof br.drafts === 'object' ? { ...br.drafts } : {},
+				verdictHistory: Array.isArray(br.verdictHistory) ? [...br.verdictHistory] : []
+			};
+		}
+		out[id] = { categoryId: id, observationRows: mergedRows };
 	}
 	return out;
 }
@@ -105,6 +118,7 @@ function createInitialSnapshot() {
 		testingItems: createFullTestingItems(),
 		testingRound: 1,
 		categorySessions: initialCategorySessions(),
+		codeReviewRound: 1,
 		standupItems: [false, false, false, false, false] as boolean[],
 		standupWhen: '',
 		standupVoiceChannel: '',
@@ -156,6 +170,10 @@ function load(): Snapshot {
 			testingRound:
 				typeof p.testingRound === 'number' && p.testingRound >= 1 ? p.testingRound : base.testingRound,
 			categorySessions: mergeCategorySessions(base.categorySessions, p.categorySessions),
+			codeReviewRound:
+				typeof p.codeReviewRound === 'number' && p.codeReviewRound >= 1
+					? p.codeReviewRound
+					: base.codeReviewRound,
 			reviewerRatings: p.reviewerRatings
 				? { ...base.reviewerRatings, ...p.reviewerRatings }
 				: base.reviewerRatings,
@@ -352,123 +370,163 @@ function session(catId: string): CategorySession {
 	return data.categorySessions[catId];
 }
 
-export function setObservationCheck(catId: string, obsId: string, checked: boolean) {
-	const s = session(catId);
-	if (s.completed) return;
-	if (s.lockedObservationIds[obsId]) return;
-	s.checks[obsId] = checked;
-}
-
-export function setDraftComment(catId: string, obsId: string, text: string) {
-	session(catId).draftComments[obsId] = text;
-}
-
 export function categoryAssignee(catId: string): 'jane' | 'joe' | undefined {
 	return CATEGORIES.find((c) => c.id === catId)?.assignee;
 }
 
-export function canInteractCategory(catId: string, role: Role): boolean {
-	if (role !== 'jane' && role !== 'joe') return false;
-	const a = categoryAssignee(catId);
-	return a === role;
-}
-
-export function allObservationsChecked(catId: string): boolean {
-	const cat = CATEGORIES.find((c) => c.id === catId);
-	if (!cat) return false;
-	const s = session(catId);
-	return cat.observations.every((o) => s.checks[o.id]);
-}
-
-export function acceptCategory(catId: string, reviewer: 'jane' | 'joe') {
-	const s = session(catId);
-	if (s.completed) return;
-	if (!allObservationsChecked(catId)) return;
-	const cat = CATEGORIES.find((c) => c.id === catId);
-	if (!cat) return;
-	const record: ReviewIterationRecord = {
-		id: uid(),
-		at: new Date().toISOString(),
-		reviewer,
-		categoryId: catId,
-		action: 'accept',
-		entries: cat.observations.map((o) => ({
-			observationId: o.id,
-			checked: true,
-			comment: undefined
-		}))
-	};
-	s.iterations.push(record);
-	s.completed = true;
-	s.pendingNudge = null;
-	pushToast(`${cat.title} marked complete.`);
-}
-
-export function nudgeCategory(catId: string, reviewer: 'jane' | 'joe') {
-	const s = session(catId);
-	if (s.completed) return;
-	const cat = CATEGORIES.find((c) => c.id === catId);
-	if (!cat) return;
-	const unchecked = cat.observations.filter((o) => !s.checks[o.id]);
-	if (unchecked.length === 0) return;
-	for (const o of unchecked) {
-		if (!s.draftComments[o.id]?.trim()) {
-			pushToast(`Add feedback for each unchecked observation in ${cat.title}.`);
-			return;
+export function codeReviewObservationsList(): CodeReviewListEntry[] {
+	const out: CodeReviewListEntry[] = [];
+	for (const c of CATEGORIES) {
+		for (const o of c.observations) {
+			out.push({
+				compositeId: `${c.id}:${o.id}`,
+				categoryId: c.id,
+				observationId: o.id,
+				categoryTitle: c.title,
+				observationText: o.text,
+				assignee: c.assignee,
+				academyHint: c.academyHint
+			});
 		}
 	}
-	const entries = cat.observations.map((o) => ({
-		observationId: o.id,
-		checked: s.checks[o.id],
-		comment: s.checks[o.id] ? undefined : s.draftComments[o.id]?.trim()
-	}));
-	const record: ReviewIterationRecord = {
-		id: uid(),
-		at: new Date().toISOString(),
-		reviewer,
-		categoryId: catId,
-		action: 'nudge',
-		entries
-	};
-	s.iterations.push(record);
-	s.pendingNudge = {
-		at: record.at,
-		reviewer,
-		items: unchecked.map((o) => ({
-			observationId: o.id,
-			comment: s.draftComments[o.id]!.trim()
-		}))
-	};
-	pushToast(`Nudge sent to Sandra (${cat.title}). Discuss on Discord.`);
+	return out;
 }
 
-export function sandraAcknowledgeNudge(catId: string) {
+export function getCodeReviewObservationRow(
+	catId: string,
+	obsId: string
+): CodeReviewObservationRowState {
 	const s = session(catId);
-	if (!s.pendingNudge) return;
-	const last = s.iterations[s.iterations.length - 1];
-	if (!last || last.action !== 'nudge') {
-		s.pendingNudge = null;
+	const row = s.observationRows[obsId];
+	if (row) return row;
+	return {
+		jane: 'pending',
+		joe: 'pending',
+		comments: [],
+		drafts: {},
+		verdictHistory: []
+	};
+}
+
+export function setCodeReviewVerdict(
+	catId: string,
+	obsId: string,
+	reviewer: 'jane' | 'joe',
+	decision: TestingDecision
+) {
+	const assignee = categoryAssignee(catId);
+	if (assignee !== reviewer) return;
+	if (decision !== 'accept' && decision !== 'decline') return;
+	const row = session(catId).observationRows[obsId];
+	if (!row) return;
+	row[reviewer] = decision;
+}
+
+export function setCodeReviewDraft(
+	catId: string,
+	obsId: string,
+	author: 'jane' | 'joe' | 'sandra',
+	text: string
+) {
+	const row = session(catId).observationRows[obsId];
+	if (!row) return;
+	row.drafts = { ...row.drafts, [author]: text };
+}
+
+export function codeReviewReviewerCommentCount(catId: string, obsId: string): number {
+	const row = session(catId).observationRows[obsId];
+	if (!row) return 0;
+	return row.comments.filter((c) => c.author === 'jane' || c.author === 'joe').length;
+}
+
+export function postCodeReviewComment(catId: string, obsId: string) {
+	const role = data.role;
+	if (role !== 'jane' && role !== 'joe' && role !== 'sandra') return;
+	const row = session(catId).observationRows[obsId];
+	if (!row) return;
+	const key = role;
+	const raw = row.drafts[key]?.trim() ?? '';
+	if (!raw) {
+		pushToast('Write something before posting.');
 		return;
 	}
-	const nextChecks: Record<string, boolean> = { ...s.checks };
-	const nextLocked: Record<string, boolean> = { ...s.lockedObservationIds };
-	for (const e of last.entries) {
-		nextChecks[e.observationId] = e.checked;
-		if (e.checked) {
-			nextLocked[e.observationId] = true;
-		} else {
-			delete nextLocked[e.observationId];
+	row.comments.push({
+		id: uid(),
+		round: data.codeReviewRound,
+		author: role,
+		text: raw,
+		at: new Date().toISOString()
+	});
+	row.drafts = { ...row.drafts, [key]: '' };
+	pushToast(role === 'sandra' ? 'Your note was added for reviewers.' : 'Comment posted.');
+}
+
+export function sandraStartNewCodeReviewRound() {
+	if (data.role !== 'sandra') return;
+	const r = data.codeReviewRound;
+	for (const c of CATEGORIES) {
+		const s = session(c.id);
+		for (const o of c.observations) {
+			const row = s.observationRows[o.id];
+			if (!row) continue;
+			row.verdictHistory.push({
+				round: r,
+				jane: row.jane,
+				joe: row.joe
+			});
+			row.jane = 'pending';
+			row.joe = 'pending';
 		}
 	}
-	s.checks = nextChecks;
-	s.lockedObservationIds = nextLocked;
-	s.draftComments = emptyDraftComments(catId);
-	s.pendingNudge = null;
-	pushToast('Sandra acknowledged — cleared items stay locked; fix remaining checks only.');
+	data.codeReviewRound += 1;
+	pushToast(`Round ${data.codeReviewRound} started — verdicts reset; threads kept.`);
+}
+
+export function codeReviewOwnerAccepted(entry: CodeReviewListEntry): boolean {
+	const row = getCodeReviewObservationRow(entry.categoryId, entry.observationId);
+	return row[entry.assignee] === 'accept';
+}
+
+export function codeReviewOwnedResolvedCount(): number {
+	let n = 0;
+	for (const e of codeReviewObservationsList()) {
+		const row = getCodeReviewObservationRow(e.categoryId, e.observationId);
+		const d = row[e.assignee];
+		if (d === 'accept' || d === 'decline') n++;
+	}
+	return n;
+}
+
+export function codeReviewProgressForReviewer(reviewer: 'jane' | 'joe'): {
+	owned: number;
+	accepted: number;
+	declined: number;
+	resolved: number;
+} {
+	const mine = codeReviewObservationsList().filter((e) => e.assignee === reviewer);
+	let accepted = 0;
+	let declined = 0;
+	for (const e of mine) {
+		const row = getCodeReviewObservationRow(e.categoryId, e.observationId);
+		if (row[reviewer] === 'accept') accepted++;
+		else if (row[reviewer] === 'decline') declined++;
+	}
+	return {
+		owned: mine.length,
+		accepted,
+		declined,
+		resolved: accepted + declined
+	};
 }
 
 export function allCategoriesComplete(): boolean {
-	return CATEGORIES.every((c) => data.categorySessions[c.id].completed);
+	for (const c of CATEGORIES) {
+		for (const o of c.observations) {
+			const row = session(c.id).observationRows[o.id];
+			if (!row || row[c.assignee] !== 'accept') return false;
+		}
+	}
+	return true;
 }
 
 export function goToStandup() {
@@ -579,6 +637,7 @@ export function resetPrototype() {
 	data.testingItems = fresh.testingItems;
 	data.testingRound = fresh.testingRound;
 	data.categorySessions = fresh.categorySessions;
+	data.codeReviewRound = fresh.codeReviewRound;
 	data.standupItems = fresh.standupItems;
 	data.standupWhen = fresh.standupWhen;
 	data.standupVoiceChannel = fresh.standupVoiceChannel;

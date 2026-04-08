@@ -54,28 +54,35 @@ export interface CategoryDef {
 	observations: ObservationDef[];
 }
 
-export interface ReviewIterationRecord {
-	id: string;
-	at: string;
-	reviewer: 'jane' | 'joe';
+/** Flat row for the code-review sprint UI (mirrors testing mandatory list entries). */
+export interface CodeReviewListEntry {
+	compositeId: string;
 	categoryId: string;
-	action: 'nudge' | 'accept';
-	entries: { observationId: string; checked: boolean; comment?: string }[];
+	observationId: string;
+	categoryTitle: string;
+	observationText: string;
+	assignee: 'jane' | 'joe';
+	academyHint: string;
+}
+
+/** Per observation in a category — same verdict + thread pattern as testing mandatory rows. */
+export interface CodeReviewVerdictSnapshot {
+	round: number;
+	jane: TestingDecision;
+	joe: TestingDecision;
+}
+
+export interface CodeReviewObservationRowState {
+	jane: TestingDecision;
+	joe: TestingDecision;
+	comments: TestingComment[];
+	drafts: Partial<Record<'jane' | 'joe' | 'sandra', string>>;
+	verdictHistory: CodeReviewVerdictSnapshot[];
 }
 
 export interface CategorySession {
 	categoryId: string;
-	completed: boolean;
-	checks: Record<string, boolean>;
-	/** Observations that passed in a prior nudge — stay checked; checkbox disabled to avoid repeat work. */
-	lockedObservationIds: Record<string, boolean>;
-	draftComments: Record<string, string>;
-	iterations: ReviewIterationRecord[];
-	pendingNudge: null | {
-		at: string;
-		reviewer: 'jane' | 'joe';
-		items: { observationId: string; comment: string }[];
-	};
+	observationRows: Record<string, CodeReviewObservationRowState>;
 }
 
 export interface SandraRating {

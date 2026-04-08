@@ -1,4 +1,4 @@
-import type { CategoryDef } from './types';
+import type { CategoryDef, CodeReviewObservationRowState } from './types';
 
 export const ACADEMY_BASE = 'https://kood-review-academy-prototype-sxyr.vercel.app/academy';
 
@@ -61,20 +61,23 @@ export const CATEGORIES: CategoryDef[] = [
 	}
 ];
 
-export function emptyChecks(categoryId: string): Record<string, boolean> {
-	const cat = CATEGORIES.find((c) => c.id === categoryId);
-	const o: Record<string, boolean> = {};
-	cat?.observations.forEach((obs) => {
-		o[obs.id] = false;
-	});
-	return o;
+export function emptyCodeReviewObservationRow(): CodeReviewObservationRowState {
+	return {
+		jane: 'pending',
+		joe: 'pending',
+		comments: [],
+		drafts: {},
+		verdictHistory: []
+	};
 }
 
-export function emptyDraftComments(categoryId: string): Record<string, string> {
+export function emptyObservationRowsForCategory(
+	categoryId: string
+): Record<string, CodeReviewObservationRowState> {
 	const cat = CATEGORIES.find((c) => c.id === categoryId);
-	const o: Record<string, string> = {};
+	const o: Record<string, CodeReviewObservationRowState> = {};
 	cat?.observations.forEach((obs) => {
-		o[obs.id] = '';
+		o[obs.id] = emptyCodeReviewObservationRow();
 	});
 	return o;
 }

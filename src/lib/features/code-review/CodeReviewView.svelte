@@ -1,9 +1,8 @@
 <script lang="ts">
-	import { allCategoriesComplete, goToStandup, trainingBlurbFor } from '$lib/appState.svelte';
-	import { CATEGORIES } from '$lib/constants';
+	import { allCategoriesComplete, trainingBlurbFor } from '$lib/appState.svelte';
 	import Accordion from '$lib/ui/Accordion.svelte';
-	import CategoryPanel from './CategoryPanel.svelte';
 	import CodeReview7Day from './CodeReview7Day.svelte';
+	import CodeReviewSprintBoard from './CodeReviewSprintBoard.svelte';
 </script>
 
 <div class="space-y-6">
@@ -95,54 +94,21 @@
 	</Accordion>
 
 	<div class="rounded-lg border border-kood-border bg-kood-bg/50 px-4 py-3 text-xs text-kood-muted">
-		<strong class="text-kood-text/90">Async vs live:</strong> The panels below are the sprint (async). The structured
-		call lives in <strong class="text-kood-text/90">Standup (post-sprint)</strong> once every category shows complete.
+		<strong class="text-kood-text/90">Async vs live:</strong> The sprint board below matches the Testing flow
+		(Accept/Decline, threads, Jane’s vs Joe’s tabs). The structured call lives in
+		<strong class="text-kood-text/90">Standup (post-sprint)</strong> once every observation is accepted.
 	</div>
 
-	<header class="border-t border-kood-border pt-6">
-		<h2 class="text-xl font-semibold text-kood-text">Sprint · category boards</h2>
-		<p class="mt-1 text-sm text-kood-muted">
-			Structured review for <strong class="text-kood-text">Mobile Messenger</strong>. Four categories are
-			auto-assigned (FIFO demo): <strong class="text-kood-text">Jane</strong> → Security &amp; Exception handling ·
-			<strong class="text-kood-text">Joe</strong> → Code readability &amp; Comments. Peers see each other's
-			categories read-only. Only the assignee can accept or nudge.
-		</p>
-	</header>
-
-	<div class="grid gap-3 rounded-xl border border-kood-border bg-kood-surface p-4 sm:grid-cols-2">
-		<div>
-			<p class="text-xs font-semibold uppercase text-kood-muted">Jane</p>
-			<p class="text-sm text-kood-text/90">Security, Exception handling</p>
-		</div>
-		<div>
-			<p class="text-xs font-semibold uppercase text-kood-muted">Joe</p>
-			<p class="text-sm text-kood-text/90">Code readability, How to write comments</p>
-		</div>
-	</div>
-
-	<div class="grid gap-4 lg:grid-cols-2">
-		{#each CATEGORIES as cat (cat.id)}
-			<CategoryPanel category={cat} />
-		{/each}
-	</div>
-
-	<CodeReview7Day />
-
-	<div class="flex flex-wrap items-center gap-3">
-		<button
-			type="button"
-			class="rounded-full bg-kood-accent px-5 py-2.5 text-sm font-bold text-kood-accent-foreground disabled:opacity-40"
-			disabled={!allCategoriesComplete()}
-			onclick={() => goToStandup()}>Complete sprint → Standup</button
-		>
-	</div>
+	<CodeReviewSprintBoard />
 
 	{#if allCategoriesComplete()}
 		<p class="text-sm text-kood-accent/90">
-			All categories accepted. Open <strong class="text-kood-text">Standup (post-sprint)</strong> for meeting details,
-			the discussion checklist, and takeaways.
+			All observations accepted. Open <strong class="text-kood-text">Standup (post-sprint)</strong> for meeting
+			details, the discussion checklist, and takeaways.
 		</p>
 	{/if}
+
+	<CodeReview7Day />
 
 	<details class="rounded-xl border border-kood-border bg-kood-surface p-4 text-sm text-kood-muted">
 		<summary class="cursor-pointer text-kood-text/90">Reviewer training hints (from Sandra's future ratings)</summary>
