@@ -19,7 +19,7 @@ function row(
 	};
 }
 
-/** First ceil(n/2) mandatory rows → Jane, rest → Joe (stable order in array). */
+/** First ceil(n/2) mandatory rows → you (Jane id), rest → Joe (stable order in array). */
 export function withMandatoryOwners(items: TestingItem[]): TestingItem[] {
 	const mandatoryCount = items.filter((t) => t.section === 'mandatory').length;
 	const janeCount = Math.ceil(mandatoryCount / 2);

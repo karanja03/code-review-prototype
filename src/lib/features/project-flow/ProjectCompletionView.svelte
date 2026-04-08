@@ -10,7 +10,7 @@
 	<h2 class="text-xl font-semibold text-kood-text">Project completion · Mobile Messenger</h2>
 	<p class="text-sm text-kood-muted">
 		Finish the Flutter messenger per the brief. When you're ready, submit for review — reviewers will be assigned
-		(Jane & Joe in this demo).
+		(You & Joe in this demo).
 	</p>
 	<div class="rounded-xl border border-kood-border bg-kood-surface p-4 text-sm text-kood-text/90">
 		<p class="text-xs font-semibold uppercase tracking-wide text-kood-muted">Repository for this project</p>
@@ -24,7 +24,7 @@
 </div>
 
 <Modal bind:open={reviewOpen} title="Are you ready?">
-	<p>This action will assign real people to review your task (mocked as Jane and Joe).</p>
+	<p>This action will assign real people to review your task (mocked as you and Joe).</p>
 	{#snippet footer()}
 		<button
 			type="button"

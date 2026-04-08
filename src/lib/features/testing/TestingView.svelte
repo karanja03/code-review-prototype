@@ -35,6 +35,18 @@
 		else mandatoryFilter = 'jane_owned';
 	});
 
+	/** When viewing as Joe on Joe’s tab, open two rows that show decline → Sandra fix → accept. */
+	let joeChecksHistoryExpanded = $state(false);
+	$effect(() => {
+		if (app.role !== 'joe' || mandatoryFilter !== 'joe_owned') {
+			joeChecksHistoryExpanded = false;
+			return;
+		}
+		if (joeChecksHistoryExpanded) return;
+		expanded = { ...expanded, m19: true, m20: true };
+		joeChecksHistoryExpanded = true;
+	});
+
 	const mandatoryList = $derived(mandatoryItems());
 	const allIds = $derived(mandatoryList.map((i) => i.id));
 
@@ -46,6 +58,19 @@
 
 	const janeProg = $derived(mandatoryProgressForReviewer('jane'));
 	const joeProg = $derived(mandatoryProgressForReviewer('joe'));
+
+	/** From Joe’s seat: “Joe’s checks” = his completed scope; “Your checks” = the other reviewer (You). */
+	const tabJaneOwnedLabel = $derived(
+		app.role === 'jane' ? 'Your checks' : app.role === 'joe' ? 'Your checks' : 'Reviewer 1'
+	);
+	const tabJoeOwnedLabel = 'Joe’s checks';
+	const mandatorySplitBlurb = $derived(
+		app.role === 'jane'
+			? `first ${janeProg.owned} yours · ${joeProg.owned} Joe’s`
+			: app.role === 'joe'
+				? `${janeProg.owned} your checks · ${joeProg.owned} Joe’s`
+				: `${janeProg.owned} for reviewer 1 · ${joeProg.owned} for Joe`
+	);
 
 	const janeAcceptPct = $derived(
 		janeProg.owned === 0 ? 0 : (janeProg.accepted / janeProg.owned) * 100
@@ -113,7 +138,7 @@
 	<header>
 		<h2 class="text-2xl font-semibold text-kood-text">Testing</h2>
 		<p class="mt-3 text-sm leading-relaxed text-kood-muted">
-			Mandatory checks are <strong class="text-kood-text/90">split between Jane and Joe</strong> — each row has one
+			Mandatory checks are <strong class="text-kood-text/90">split between you and Joe</strong> — each row has one
 			owner who Accepts/Declines; the other reviewer reads along and can comment. Progress below always reflects the
 			<strong class="text-kood-text/90">full</strong> mandatory list.
 		</p>
@@ -165,13 +190,13 @@
 		<div class="mt-4 grid gap-4 sm:grid-cols-2">
 			<div>
 				<div class="flex items-center justify-between text-xs">
-					<span class="font-medium text-kood-text">Jane’s bucket</span>
+					<span class="font-medium text-kood-text">Your bucket</span>
 					<span class="text-kood-muted">{janeProg.resolved}/{janeProg.owned}</span>
 				</div>
 				<div
 					class="mt-1.5 flex h-2.5 w-full overflow-hidden rounded-full bg-kood-bg ring-1 ring-kood-border/60"
 					role="img"
-					aria-label="Jane’s mandatory checks: {janeProg.accepted} accepted, {janeProg.declined} declined, {janeProg.owned - janeProg.resolved} pending of {janeProg.owned}"
+					aria-label="Your mandatory checks: {janeProg.accepted} accepted, {janeProg.declined} declined, {janeProg.owned - janeProg.resolved} pending of {janeProg.owned}"
 				>
 					<div
 						class="h-full bg-kood-accent/55 transition-[width] duration-300"
@@ -245,9 +270,16 @@
 			class="rounded-lg border border-kood-accent/25 bg-kood-accent/5 px-4 py-3 text-sm text-kood-text/90"
 			role="status"
 		>
-			<strong class="text-kood-text">{app.role === 'jane' ? 'Jane' : 'Joe'}:</strong> Accept/Decline only on rows
-			marked for you. Open the <strong class="text-kood-text/90">Peer</strong> tab to see the other reviewer’s scope
-			(read-only verdicts; you can still comment).
+			{#if app.role === 'jane'}
+				<strong class="text-kood-text">You:</strong> Accept/Decline only on rows marked for you. Use the other tab (<strong
+					class="text-kood-text/90">{tabJoeOwnedLabel}</strong>) to see Joe’s scope (read-only verdicts; you can still
+				comment).
+			{:else}
+				<strong class="text-kood-text">Joe:</strong> <strong class="text-kood-text/90">{tabJoeOwnedLabel}</strong> is your
+				completed mandatory work with Sandra (verdicts read-only here; threads stay visible). <strong
+					class="text-kood-text/90">{tabJaneOwnedLabel}</strong> is your peer’s live scope — read-only verdicts; you can
+				still comment.
+			{/if}
 		</div>
 	{/if}
 
@@ -255,11 +287,15 @@
 		<div class="mb-3 flex flex-wrap items-end justify-between gap-2">
 			<h3 class="text-lg font-semibold text-kood-text">Mandatory</h3>
 			<p class="text-xs text-kood-muted">
-				{mandatoryList.length} checks · first {janeProg.owned} owned by Jane, remaining {joeProg.owned} by Joe
+				{mandatoryList.length} checks · {mandatorySplitBlurb}
 			</p>
 		</div>
 
-		<div class="mb-3 flex flex-wrap gap-2" role="tablist" aria-label="Jane’s vs Joe’s mandatory checks">
+		<div
+			class="mb-3 flex flex-wrap gap-2"
+			role="tablist"
+			aria-label={`${tabJaneOwnedLabel} vs ${tabJoeOwnedLabel} mandatory checks`}
+		>
 			<button
 				type="button"
 				class="rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors {mandatoryFilter === 'jane_owned'
@@ -267,7 +303,7 @@
 					: 'border-kood-border text-kood-muted hover:bg-kood-surface-raised'}"
 				role="tab"
 				aria-selected={mandatoryFilter === 'jane_owned'}
-				onclick={() => setFilter('jane_owned')}>Jane’s checks ({janeProg.owned})</button
+				onclick={() => setFilter('jane_owned')}>{tabJaneOwnedLabel} ({janeProg.owned})</button
 			>
 			<button
 				type="button"
@@ -276,7 +312,7 @@
 					: 'border-kood-border text-kood-muted hover:bg-kood-surface-raised'}"
 				role="tab"
 				aria-selected={mandatoryFilter === 'joe_owned'}
-				onclick={() => setFilter('joe_owned')}>Joe’s checks ({joeProg.owned})</button
+				onclick={() => setFilter('joe_owned')}>{tabJoeOwnedLabel} ({joeProg.owned})</button
 			>
 		</div>
 
@@ -359,7 +395,7 @@
 		>
 		{#if !allMandatoryDoubleAccepted()}
 			<p class="text-xs text-amber-400/90">
-				Every mandatory row must be <strong class="text-amber-200">Accepted by its owner</strong> (Jane or Joe). Use
+				Every mandatory row must be <strong class="text-amber-200">Accepted by its owner</strong> (you or Joe). Use
 				tabs and pages so nothing is missed.
 			</p>
 		{/if}

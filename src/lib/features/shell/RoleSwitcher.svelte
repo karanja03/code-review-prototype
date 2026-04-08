@@ -6,7 +6,7 @@
 
 	const roles: { id: Role; label: string }[] = [
 		{ id: 'sandra', label: 'Sandra (submitter)' },
-		{ id: 'jane', label: 'Jane (reviewer)' },
+		{ id: 'jane', label: 'You (reviewer)' },
 		{ id: 'joe', label: 'Joe (reviewer)' }
 	];
 </script>

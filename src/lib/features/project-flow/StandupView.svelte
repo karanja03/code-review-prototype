@@ -5,7 +5,7 @@
 
 	const agenda = [
 		'Scheduled the ~45 min sync and shared time / voice channel with the team.',
-		'Followed the structure: Jane’s categories → Joe’s → cross-review → Sandra → shared actions.',
+		'Followed the structure: Your categories → Joe’s → cross-review → Sandra → shared actions.',
 		'Captured takeaways below (what was discussed, key feedback, action items, reflections).',
 		'Confirmed everyone had space to speak; notes are specific enough to use later.',
 		'Agreed what “done” means for this review before moving to Accept project.'
@@ -55,7 +55,7 @@
 		</p>
 		<ol class="mt-4 list-decimal space-y-3 pl-5 text-sm text-kood-text/90">
 			<li>
-				<strong class="text-kood-text">Jane</strong> — Security &amp; Exception handling: findings, nudges, fixes.
+				<strong class="text-kood-text">You</strong> — Security &amp; Exception handling: findings, feedback, fixes.
 			</li>
 			<li><strong class="text-kood-text">Joe</strong> — Readability &amp; comments: findings, nudges, fixes.</li>
 			<li>

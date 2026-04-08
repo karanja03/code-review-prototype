@@ -35,7 +35,7 @@
 			<p class="mt-2 text-kood-muted">Mobile Messenger — who has confirmed they will review.</p>
 			<ul class="mt-2 space-y-1.5 text-sm">
 				<li class="flex items-center justify-between gap-2">
-					<span class="text-kood-text/90">Jane</span>
+					<span class="text-kood-text/90">You</span>
 					<span
 						class="rounded-md px-2 py-0.5 text-[11px] font-medium {app.reviewerAssignmentAccepted.jane
 							? 'bg-kood-accent/20 text-kood-accent'
@@ -69,7 +69,7 @@
 	<div class="rounded-xl border border-kood-border bg-kood-surface p-3">
 		<p class="text-xs font-semibold uppercase text-kood-muted">Reviews</p>
 		<p class="mt-1 text-sm text-kood-muted">
-			{app.submittedForReview ? 'Jane & Joe assigned (demo).' : 'Submit task to see your reviewer(s).'}
+			{app.submittedForReview ? 'You & Joe assigned (demo).' : 'Submit task to see your reviewer(s).'}
 		</p>
 	</div>
 </div>

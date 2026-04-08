@@ -64,6 +64,18 @@
 	const janeCategoryCount = $derived(CATEGORIES.filter((c) => c.assignee === 'jane').length);
 	const joeCategoryCount = $derived(CATEGORIES.filter((c) => c.assignee === 'joe').length);
 
+	const tabJaneOwnedLabel = $derived(
+		app.role === 'jane' ? 'Your checks' : app.role === 'joe' ? 'Your checks' : 'Reviewer 1'
+	);
+	const tabJoeOwnedLabel = 'Joe’s checks';
+	const codeReviewCategoryBlurb = $derived(
+		app.role === 'jane'
+			? `You ${janeCategoryCount} categories · Joe ${joeCategoryCount} categories`
+			: app.role === 'joe'
+				? `Your ${janeCategoryCount} categories · Joe ${joeCategoryCount} categories`
+				: `Reviewer 1: ${janeCategoryCount} · Joe: ${joeCategoryCount}`
+	);
+
 	const janeAcceptPct = $derived(
 		janeProg.owned === 0 ? 0 : (janeProg.accepted / janeProg.owned) * 100
 	);
@@ -115,9 +127,16 @@
 	<header class="border-t border-kood-border pt-6">
 		<h2 class="text-xl font-semibold text-kood-text">Sprint · category observations</h2>
 		<p class="mt-1 text-sm text-kood-muted">
-			Same flow as <strong class="text-kood-text">Testing</strong>: rows are split by assignee — Jane owns Security
-			&amp; Exception handling observations; Joe owns Readability &amp; Comments. Only the assignee Accepts/Declines;
-			the peer reads along and can use the thread.
+			{#if app.role === 'joe'}
+				You own Readability &amp; Comments; the other reviewer owns Security &amp; Exception handling. Only the assignee
+				Accepts/Declines; the peer reads along and can use the thread.
+			{:else if app.role === 'sandra'}
+				Reviewer 1 owns Security &amp; Exception handling; Joe owns Readability &amp; Comments. Only the assignee
+				Accepts/Declines; the peer reads along and can use the thread.
+			{:else}
+				You own Security &amp; Exception handling; Joe owns Readability &amp; Comments. Only the assignee Accepts/Declines;
+				the peer reads along and can use the thread.
+			{/if}
 		</p>
 	</header>
 
@@ -125,11 +144,6 @@
 		<section class="rounded-lg border border-kood-border bg-kood-surface p-5">
 			<h3 class="text-sm font-semibold text-kood-text">How to run the async sprint?</h3>
 			<ol class="mt-3 list-decimal space-y-2 pl-5 text-sm text-kood-muted">
-				<li>
-					Use <strong class="text-kood-text/90">your tab</strong> for categories you own; paginate by
-					<strong class="text-kood-text/90">category</strong> so the theme stays obvious. Switch tabs to see the peer’s
-					scope.
-				</li>
 				<li>Accept or decline each observation; use the thread for specifics (paper plane to send).</li>
 				<li>Align with the live call plan in Standup once every row in every category is accepted.</li>
 			</ol>
@@ -165,13 +179,13 @@
 		<div class="mt-4 grid gap-4 sm:grid-cols-2">
 			<div>
 				<div class="flex items-center justify-between text-xs">
-					<span class="font-medium text-kood-text">Jane’s bucket</span>
+					<span class="font-medium text-kood-text">Your bucket</span>
 					<span class="text-kood-muted">{janeProg.resolved}/{janeProg.owned}</span>
 				</div>
 				<div
 					class="mt-1.5 flex h-2.5 w-full overflow-hidden rounded-full bg-kood-bg ring-1 ring-kood-border/60"
 					role="img"
-					aria-label="Jane’s observations: {janeProg.accepted} accepted, {janeProg.declined} declined"
+					aria-label="Your observations: {janeProg.accepted} accepted, {janeProg.declined} declined"
 				>
 					<div class="h-full bg-kood-accent/55 transition-[width] duration-300" style="width: {janeAcceptPct}%"></div>
 					<div class="h-full bg-red-500/50 transition-[width] duration-300" style="width: {janeDeclinePct}%"></div>
@@ -233,8 +247,15 @@
 			class="rounded-lg border border-kood-accent/25 bg-kood-accent/5 px-4 py-3 text-sm text-kood-text/90"
 			role="status"
 		>
-			<strong class="text-kood-text">{app.role === 'jane' ? 'Jane' : 'Joe'}:</strong> Accept/Decline only on rows in
-			your tab. Open the other reviewer’s tab to see their scope (read-only verdicts; you can still comment).
+			{#if app.role === 'jane'}
+				<strong class="text-kood-text">You:</strong> Accept/Decline only on rows in your tab. Use <strong
+					class="text-kood-text/90">{tabJoeOwnedLabel}</strong> to see Joe’s scope (read-only verdicts; you can still
+				comment).
+			{:else}
+				<strong class="text-kood-text">Joe:</strong> <strong class="text-kood-text/90">{tabJoeOwnedLabel}</strong> is your
+				completed observations (read-only verdicts here). <strong class="text-kood-text/90">{tabJaneOwnedLabel}</strong> is
+				your peer’s live scope — read-only verdicts; you can still comment.
+			{/if}
 		</div>
 	{/if}
 
@@ -242,11 +263,15 @@
 		<div class="mb-3 flex flex-wrap items-end justify-between gap-2">
 			<h3 class="text-lg font-semibold text-kood-text">Observations</h3>
 			<p class="text-xs text-kood-muted">
-				{fullList.length} rows · Jane {janeCategoryCount} categories / Joe {joeCategoryCount} categories
+				{fullList.length} rows · {codeReviewCategoryBlurb}
 			</p>
 		</div>
 
-		<div class="mb-3 flex flex-wrap gap-2" role="tablist" aria-label="Jane’s vs Joe’s observation lists">
+		<div
+			class="mb-3 flex flex-wrap gap-2"
+			role="tablist"
+			aria-label={`${tabJaneOwnedLabel} vs ${tabJoeOwnedLabel} observation lists`}
+		>
 			<button
 				type="button"
 				class="rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors {filter === 'jane_owned'
@@ -254,7 +279,7 @@
 					: 'border-kood-border text-kood-muted hover:bg-kood-surface-raised'}"
 				role="tab"
 				aria-selected={filter === 'jane_owned'}
-				onclick={() => setFilter('jane_owned')}>Jane’s checks ({janeProg.owned})</button
+				onclick={() => setFilter('jane_owned')}>{tabJaneOwnedLabel} ({janeProg.owned})</button
 			>
 			<button
 				type="button"
@@ -263,7 +288,7 @@
 					: 'border-kood-border text-kood-muted hover:bg-kood-surface-raised'}"
 				role="tab"
 				aria-selected={filter === 'joe_owned'}
-				onclick={() => setFilter('joe_owned')}>Joe’s checks ({joeProg.owned})</button
+				onclick={() => setFilter('joe_owned')}>{tabJoeOwnedLabel} ({joeProg.owned})</button
 			>
 		</div>
 
@@ -327,7 +352,7 @@
 						<p class="mt-1 text-xs text-kood-muted">
 							{currentGroup.entries.length}
 							{currentGroup.entries.length === 1 ? 'observation' : 'observations'} · assigned to
-							<strong class="text-kood-text/90">{currentGroup.category.assignee === 'jane' ? 'Jane' : 'Joe'}</strong>
+							<strong class="text-kood-text/90">{currentGroup.category.assignee === 'jane' ? 'You' : 'Joe'}</strong>
 						</p>
 					</div>
 					<a
@@ -378,7 +403,7 @@
 
 	{#if !allCategoriesComplete()}
 		<p class="text-xs text-amber-400/90">
-			Every observation must be <strong class="text-amber-200">Accepted by its assignee</strong> (Jane or Joe). Use
+			Every observation must be <strong class="text-amber-200">Accepted by its assignee</strong> (you or Joe). Use
 			tabs and category pages so nothing is missed.
 		</p>
 	{/if}

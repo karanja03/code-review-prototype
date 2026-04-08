@@ -10,6 +10,8 @@
 	import {
 		commentAuthorLabel,
 		formatShortTimestamp,
+		formatVerdictHistoryLine,
+		reviewerDisplayName,
 		verdictChipClass,
 		verdictLabel
 	} from './testingUtils';
@@ -64,7 +66,7 @@
 		{#if isSandra || isReviewer}
 			<div
 				class="shrink-0 self-start rounded px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-kood-muted ring-1 ring-kood-border"
-				title="Notes from Jane + Joe"
+				title="Notes from You & Joe"
 			>
 				{n}
 			</div>
@@ -106,7 +108,7 @@
 			{#if item.jane === 'accept' || item.jane === 'decline'}
 				{#if !(isReviewer && self === 'jane' && canSetVerdict)}
 					<span class="rounded px-2 py-0.5 ring-1 {verdictChipClass(item.jane)}"
-						>J · {verdictLabel(item.jane)}</span
+						>You · {verdictLabel(item.jane)}</span
 					>
 				{/if}
 			{/if}
@@ -160,7 +162,7 @@
 					{/if}
 				{:else if item[peer] === 'accept' || item[peer] === 'decline'}
 					<p class="text-[11px] text-kood-muted">
-						Other reviewer: {verdictLabel(item[peer])} (read-only)
+						{reviewerDisplayName(peer)}: {verdictLabel(item[peer])} (read-only)
 					</p>
 				{/if}
 			{/if}
@@ -272,7 +274,7 @@
 					<ul class="mt-1.5 space-y-1">
 						{#each [...item.verdictHistory].reverse() as h, i (i)}
 							<li class="rounded bg-kood-bg px-2 py-1 font-mono text-[10px] text-kood-muted">
-								R{h.round}: Jane {h.jane} · Joe {h.joe}
+								{formatVerdictHistoryLine(h)}
 							</li>
 						{/each}
 					</ul>

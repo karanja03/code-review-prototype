@@ -7,7 +7,7 @@
 	const janeCats = $derived(CATEGORIES.filter((c) => c.assignee === 'jane').map((c) => c.title));
 	const joeCats = $derived(CATEGORIES.filter((c) => c.assignee === 'joe').map((c) => c.title));
 	const myCats = $derived(app.role === 'jane' ? janeCats : joeCats);
-	const peerName = $derived(app.role === 'jane' ? 'Joe' : 'Jane');
+	const peerName = $derived(app.role === 'jane' ? 'Joe' : 'You');
 	const peerCats = $derived(app.role === 'jane' ? joeCats : janeCats);
 </script>
 

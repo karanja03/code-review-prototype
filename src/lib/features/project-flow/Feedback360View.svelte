@@ -47,7 +47,7 @@
 					<div class="rounded-xl border border-kood-border bg-kood-surface p-4">
 						<p class="text-sm font-medium text-kood-text">{cat.title}</p>
 						<p class="text-xs text-kood-muted">
-							Reviewer: {cat.assignee === 'jane' ? 'Jane' : 'Joe'}
+							Reviewer: {cat.assignee === 'jane' ? 'You' : 'Joe'}
 						</p>
 						<label class="mt-3 block text-xs text-kood-muted" for="sc-{cat.id}">Score</label>
 						<select
@@ -92,7 +92,7 @@
 	{:else if reviewerBlock}
 		<section class="space-y-4">
 			<h3 class="text-lg font-medium text-kood-text">
-				{app.role === 'joe' ? 'Joe' : 'Jane'} — rate Sandra & cross-reviewer
+				{app.role === 'joe' ? 'Joe' : 'You'} — rate Sandra & cross-reviewer
 			</h3>
 			<p class="text-sm text-kood-muted">
 				Scale for cross input: 1 = No cross input · 3 = Minor · 5 = Constructive cross input on areas you did
@@ -172,11 +172,11 @@
 
 				<div class="rounded-xl border border-kood-border bg-kood-surface p-4 md:col-span-2">
 					<p class="text-sm font-medium text-kood-text">
-						Cross reviewer ({app.role === 'joe' ? 'Jane' : 'Joe'}) — awareness in your categories
+						Cross reviewer ({app.role === 'joe' ? 'You' : 'Joe'}) — awareness in your categories
 					</p>
 					<p class="text-xs text-kood-muted">
 						{app.role === 'joe'
-							? 'Did Jane raise relevant questions in readability / comments?'
+							? 'Did your peer raise relevant questions in readability / comments?'
 							: 'Did Joe raise relevant questions in security / exception handling?'}
 					</p>
 					<select

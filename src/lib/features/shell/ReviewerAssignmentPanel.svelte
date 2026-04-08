@@ -5,15 +5,18 @@
 	const app = getApp();
 
 	const role = $derived(app.role === 'jane' || app.role === 'joe' ? app.role : 'jane');
-	const displayName = $derived(role === 'jane' ? 'Jane' : 'Joe');
-	const peerName = $derived(role === 'jane' ? 'Joe' : 'Jane');
+	const displayName = $derived(role === 'jane' ? 'You' : 'Joe');
+	const peerName = $derived(role === 'jane' ? 'Joe' : 'You');
 
 	const myCategories = $derived(CATEGORIES.filter((c) => c.assignee === role));
 
 	let agreed = $state(false);
 
+	/** You (jane) must tick the box; Joe never does in this demo. */
+	const canContinue = $derived(role === 'joe' || agreed);
+
 	function onConfirm() {
-		if (!agreed) return;
+		if (!canContinue) return;
 		acceptReviewerAssignment(role);
 	}
 </script>
@@ -44,7 +47,7 @@
 			<section>
 				<h3 class="text-sm font-semibold text-kood-text">Your categories</h3>
 				<p class="mt-1 text-xs text-kood-muted">
-					Only you Accept / Nudge on these; the other reviewer sees them read-only. Each line links to the matching
+					Only you Accept / Decline on these; the other reviewer sees them read-only. Each line links to the matching
 					module in Review Academy if you want a refresher.
 				</p>
 				<ul class="mt-3 space-y-3">
@@ -120,12 +123,12 @@
 				<ul class="mt-2 list-disc space-y-2 pl-5">
 					{#if role === 'jane'}
 						<li>Own <strong class="text-kood-text/90">Security</strong> and <strong class="text-kood-text/90">Exception handling</strong> boards: fair, evidence-based checks.</li>
-						<li>Use <strong class="text-kood-text/90">Nudge</strong> when something must change—clear, actionable, linked to what you saw.</li>
+						<li>Use <strong class="text-kood-text/90">Decline</strong> plus the thread when something must change—clear, actionable, linked to what you saw.</li>
 						<li>In <strong class="text-kood-text/90">testing</strong>, Accept/Decline only on <strong class="text-kood-text/90">your</strong> mandatory rows (split with your peer); comment anywhere.</li>
 						<li>In <strong class="text-kood-text/90">standup</strong>, walk through your categories first, then join cross-review with curiosity.</li>
 					{:else}
 						<li>Own <strong class="text-kood-text/90">Readability</strong> and <strong class="text-kood-text/90">Comments</strong> boards: clarity over cleverness.</li>
-						<li>Use <strong class="text-kood-text/90">Nudge</strong> when something must change—clear, actionable, linked to what you saw.</li>
+						<li>Use <strong class="text-kood-text/90">Decline</strong> plus the thread when something must change—clear, actionable, linked to what you saw.</li>
 						<li>In <strong class="text-kood-text/90">testing</strong>, Accept/Decline only on <strong class="text-kood-text/90">your</strong> mandatory rows (split with your peer); comment anywhere.</li>
 						<li>In <strong class="text-kood-text/90">standup</strong>, walk through your categories first, then join cross-review with curiosity.</li>
 					{/if}
@@ -141,18 +144,25 @@
 			</section>
 
 			<div class="border-t border-kood-border pt-4">
-				<label class="flex cursor-pointer items-start gap-3 text-sm text-kood-text/90">
-					<input
-						type="checkbox"
-						class="mt-1 h-4 w-4 shrink-0 rounded border-kood-border bg-kood-surface-raised text-kood-accent focus:ring-kood-accent"
-						bind:checked={agreed}
-					/>
-					<span>I understand my assignment and responsibilities, and I will start reviewing.</span>
-				</label>
+				{#if role === 'jane'}
+					<label class="flex cursor-pointer items-start gap-3 text-sm text-kood-text/90">
+						<input
+							type="checkbox"
+							class="mt-1 h-4 w-4 shrink-0 rounded border-kood-border bg-kood-surface-raised text-kood-accent focus:ring-kood-accent"
+							bind:checked={agreed}
+						/>
+						<span>I understand my assignment and responsibilities, and I will start reviewing.</span>
+					</label>
+				{:else}
+					<p class="text-sm text-kood-muted">
+						In this prototype Joe is already on the hook—no extra confirmation step. Continue when you want to
+						explore the flow as Joe.
+					</p>
+				{/if}
 				<button
 					type="button"
 					class="mt-4 rounded-full bg-kood-accent px-6 py-2.5 text-sm font-bold text-kood-accent-foreground disabled:cursor-not-allowed disabled:opacity-40"
-					disabled={!agreed}
+					disabled={!canContinue}
 					onclick={onConfirm}>Confirm and continue</button
 				>
 			</div>

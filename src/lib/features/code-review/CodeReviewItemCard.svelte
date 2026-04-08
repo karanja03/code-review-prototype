@@ -11,6 +11,7 @@
 	import {
 		commentAuthorLabel,
 		formatShortTimestamp,
+		formatVerdictHistoryLine,
 		verdictChipClass,
 		verdictLabel
 	} from '$lib/features/testing/testingUtils';
@@ -61,7 +62,7 @@
 		{#if isSandra || isReviewer}
 			<div
 				class="shrink-0 self-start rounded px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-kood-muted ring-1 ring-kood-border"
-				title="Notes from Jane + Joe"
+				title="Notes from You & Joe"
 			>
 				{n}
 			</div>
@@ -260,7 +261,7 @@
 					<ul class="mt-1.5 space-y-1">
 						{#each [...row.verdictHistory].reverse() as h, i (i)}
 							<li class="rounded bg-kood-bg px-2 py-1 font-mono text-[10px] text-kood-muted">
-								R{h.round}: Jane {h.jane} · Joe {h.joe}
+								{formatVerdictHistoryLine(h)}
 							</li>
 						{/each}
 					</ul>

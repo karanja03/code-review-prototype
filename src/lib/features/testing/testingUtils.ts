@@ -25,8 +25,21 @@ export function formatShortTimestamp(iso: string) {
 	}
 }
 
-export function commentAuthorLabel(a: TestingComment['author']) {
-	if (a === 'jane') return 'Jane';
-	if (a === 'joe') return 'Joe';
+/** Jane’s reviewer seat is framed as the prototype user (“You”). */
+export function reviewerDisplayName(author: 'jane' | 'joe' | 'sandra'): string {
+	if (author === 'jane') return 'You';
+	if (author === 'joe') return 'Joe';
 	return 'Sandra';
+}
+
+export function commentAuthorLabel(a: TestingComment['author']) {
+	return reviewerDisplayName(a);
+}
+
+export function formatVerdictHistoryLine(h: {
+	round: number;
+	jane: TestingDecision;
+	joe: TestingDecision;
+}): string {
+	return `R${h.round}: You ${h.jane} · Joe ${h.joe}`;
 }

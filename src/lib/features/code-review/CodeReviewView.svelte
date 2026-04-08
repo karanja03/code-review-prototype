@@ -39,7 +39,7 @@
 			</li>
 			<li>
 				<strong class="text-kood-text/90">Prepare</strong> individually before the call. Align on who already
-				looked at which parts of the repo (here: Jane → Security &amp; Exception handling, Joe → Readability &amp;
+				looked at which parts of the repo (here: you → Security &amp; Exception handling, Joe → Readability &amp;
 				Comments).
 			</li>
 			<li>
@@ -55,11 +55,11 @@
 		</p>
 		<ol class="mt-4 list-decimal space-y-4 pl-5 text-sm text-kood-text/90">
 			<li>
-				<strong class="text-kood-text">Jane — assigned categories</strong>
+				<strong class="text-kood-text">You — assigned categories</strong>
 				<span class="text-kood-muted"> (Security, Exception handling)</span>
 				<p class="mt-1 text-kood-muted">
-					Walk through main findings, nudges sent to Sandra, and what changed since. Peers ask clarifying questions
-					only — Jane owns the narrative for her scope.
+					Walk through main findings, feedback sent to Sandra, and what changed since. Peers ask clarifying questions
+					only — you own the narrative for your scope.
 				</p>
 			</li>
 			<li>
@@ -95,7 +95,7 @@
 
 	<div class="rounded-lg border border-kood-border bg-kood-bg/50 px-4 py-3 text-xs text-kood-muted">
 		<strong class="text-kood-text/90">Async vs live:</strong> The sprint board below matches the Testing flow
-		(Accept/Decline, threads, Jane’s vs Joe’s tabs). The structured call lives in
+		(Accept/Decline, threads, Your checks vs Joe’s tabs). The structured call lives in
 		<strong class="text-kood-text/90">Standup (post-sprint)</strong> once every observation is accepted.
 	</div>
 
