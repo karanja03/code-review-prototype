@@ -184,7 +184,7 @@ export function seedTestingItemsForYouJoeDemo(items: TestingItem[]): TestingItem
 	});
 }
 
-function richReadabilityR1(): CodeReviewObservationRowState {
+function richPerformanceP1(): CodeReviewObservationRowState {
 	const verdictHistory: CodeReviewVerdictSnapshot[] = [
 		{ round: 1, jane: 'pending', joe: 'decline' },
 		{ round: 2, jane: 'pending', joe: 'decline' },
@@ -193,59 +193,59 @@ function richReadabilityR1(): CodeReviewObservationRowState {
 	];
 	const comments = [
 		{
-			id: 'seed-cr-r1-1',
+			id: 'seed-cr-p1-1',
 			round: 1,
 			author: 'joe' as const,
-			text: 'This reads okay at a glance, but the main chat flow still has a 200-line widget with mixed concerns — hard to review. Can we split layout vs state?',
+			text: 'Declined: chat list query pulls full message bodies for every thread — payload and scroll cost grow linearly with history. That will not hold for real accounts.',
 			at: T1
 		},
 		{
-			id: 'seed-cr-r1-2',
+			id: 'seed-cr-p1-2',
 			round: 1,
 			author: 'sandra' as const,
-			text: 'Split into ChatScreen + ChatBody + composer hook; no behaviour change. PR linked in standup notes.',
+			text: 'Agreed. List endpoint now returns preview fields only; full thread loads when you open a chat. Build 41.',
 			at: T2
 		},
 		{
-			id: 'seed-cr-r1-3',
+			id: 'seed-cr-p1-3',
 			round: 2,
 			author: 'joe' as const,
-			text: 'Structure is better. Naming still leaks implementation (FooManager2). Prefer intent-based names per our checklist.',
+			text: 'Better. Opening a chat still does one attachment fetch per message batch — smells like N+1 from the client.',
 			at: T3
 		},
 		{
-			id: 'seed-cr-r1-4',
+			id: 'seed-cr-p1-4',
 			round: 2,
 			author: 'sandra' as const,
-			text: 'Renamed to match domain language (ConversationList, MessageComposer). Updated tests.',
+			text: 'Batched attachment metadata in the repository layer; single round-trip per screen. Added a small benchmark note in the PR.',
 			at: T4
 		},
 		{
-			id: 'seed-cr-r1-5',
+			id: 'seed-cr-p1-5',
 			round: 3,
 			author: 'joe' as const,
-			text: 'Almost there — one private helper is doing network + parsing. Boundary should be at the repository.',
+			text: 'Last nit: search still scans all in-memory matches on each keystroke — debounce helps but complexity is still rough on large inboxes.',
 			at: T5
 		},
 		{
-			id: 'seed-cr-r1-6',
+			id: 'seed-cr-p1-6',
 			round: 3,
 			author: 'sandra' as const,
-			text: 'Moved parsing into ChatRepository; widget only maps view state. Added unit test for mapper.',
+			text: 'Indexed prefix search on the server + 300ms debounce client-side; capped result window. Build 43.',
 			at: T6
 		},
 		{
-			id: 'seed-cr-r1-7',
+			id: 'seed-cr-p1-7',
 			round: 4,
 			author: 'joe' as const,
-			text: 'Reads clean now. Accepting this observation.',
+			text: 'Profiles clean on throttled CPU + large fixture. Accepting this observation.',
 			at: T7
 		},
 		{
-			id: 'seed-cr-r1-8',
+			id: 'seed-cr-p1-8',
 			round: 4,
 			author: 'sandra' as const,
-			text: 'Thanks for the iterative feedback — helps keep the refactor honest.',
+			text: 'Thanks for pushing on list vs detail costs — it tightened the data layer quite a bit.',
 			at: T8
 		}
 	];
@@ -258,7 +258,7 @@ function richReadabilityR1(): CodeReviewObservationRowState {
 	};
 }
 
-/** Joe’s code-review categories: all observations accepted; readability r1 has full thread. Your (Jane) categories stay pending. */
+/** Joe’s code-review categories: all observations accepted; performance p1 has full thread. Your categories stay pending. */
 export function seedCategorySessionsForJoeDemo(
 	sessions: Record<string, CategorySession>
 ): Record<string, CategorySession> {
@@ -268,8 +268,8 @@ export function seedCategorySessionsForJoeDemo(
 		const s = out[c.id];
 		if (!s?.observationRows) continue;
 		for (const o of c.observations) {
-			if (c.id === 'readability' && o.id === 'r1') {
-				s.observationRows[o.id] = richReadabilityR1();
+			if (c.id === 'performance' && o.id === 'p1') {
+				s.observationRows[o.id] = richPerformanceP1();
 			} else {
 				s.observationRows[o.id] = {
 					jane: 'pending',

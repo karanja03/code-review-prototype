@@ -122,12 +122,12 @@
 				<h3 class="text-sm font-semibold text-kood-text">Your responsibilities ({displayName})</h3>
 				<ul class="mt-2 list-disc space-y-2 pl-5">
 					{#if role === 'jane'}
-						<li>Own <strong class="text-kood-text/90">Security</strong> and <strong class="text-kood-text/90">Exception handling</strong> boards: fair, evidence-based checks.</li>
+						<li>Own <strong class="text-kood-text/90">Security</strong> and <strong class="text-kood-text/90">Correctness</strong> boards: fair, evidence-based checks.</li>
 						<li>Use <strong class="text-kood-text/90">Decline</strong> plus the thread when something must change—clear, actionable, linked to what you saw.</li>
 						<li>In <strong class="text-kood-text/90">testing</strong>, Accept/Decline only on <strong class="text-kood-text/90">your</strong> mandatory rows (split with your peer); comment anywhere.</li>
 						<li>In <strong class="text-kood-text/90">standup</strong>, walk through your categories first, then join cross-review with curiosity.</li>
 					{:else}
-						<li>Own <strong class="text-kood-text/90">Readability</strong> and <strong class="text-kood-text/90">Comments</strong> boards: clarity over cleverness.</li>
+						<li>Own <strong class="text-kood-text/90">Performance</strong> and <strong class="text-kood-text/90">Structure &amp; architecture</strong> boards: scaling and maintainability, not micro-optimisation theatre.</li>
 						<li>Use <strong class="text-kood-text/90">Decline</strong> plus the thread when something must change—clear, actionable, linked to what you saw.</li>
 						<li>In <strong class="text-kood-text/90">testing</strong>, Accept/Decline only on <strong class="text-kood-text/90">your</strong> mandatory rows (split with your peer); comment anywhere.</li>
 						<li>In <strong class="text-kood-text/90">standup</strong>, walk through your categories first, then join cross-review with curiosity.</li>

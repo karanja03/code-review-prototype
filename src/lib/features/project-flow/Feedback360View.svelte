@@ -101,7 +101,7 @@
 
 			<div class="grid gap-4 md:grid-cols-2">
 				<div class="rounded-xl border border-kood-border bg-kood-surface p-4">
-					<p class="text-sm font-medium text-kood-text">Sandra — readable code</p>
+					<p class="text-sm font-medium text-kood-text">Sandra — structure &amp; architecture</p>
 					<select
 						class="mt-2 w-full rounded-lg border border-kood-border bg-kood-bg px-2 py-2 text-sm text-kood-text disabled:opacity-50"
 						disabled={reviewerBlock.readableCode.submitted}
@@ -136,7 +136,7 @@
 				</div>
 
 				<div class="rounded-xl border border-kood-border bg-kood-surface p-4">
-					<p class="text-sm font-medium text-kood-text">Sandra — comments in code</p>
+					<p class="text-sm font-medium text-kood-text">Sandra — performance</p>
 					<select
 						class="mt-2 w-full rounded-lg border border-kood-border bg-kood-bg px-2 py-2 text-sm text-kood-text disabled:opacity-50"
 						disabled={reviewerBlock.codeComments.submitted}
@@ -176,8 +176,8 @@
 					</p>
 					<p class="text-xs text-kood-muted">
 						{app.role === 'joe'
-							? 'Did your peer raise relevant questions in readability / comments?'
-							: 'Did Joe raise relevant questions in security / exception handling?'}
+							? 'Did your peer raise relevant questions in security / correctness?'
+							: 'Did Joe raise relevant questions in performance / structure & architecture?'}
 					</p>
 					<select
 						class="mt-2 w-full max-w-xs rounded-lg border border-kood-border bg-kood-bg px-2 py-2 text-sm text-kood-text disabled:opacity-50"

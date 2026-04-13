@@ -39,8 +39,8 @@
 			</li>
 			<li>
 				<strong class="text-kood-text/90">Prepare</strong> individually before the call. Align on who already
-				looked at which parts of the repo (here: you → Security &amp; Exception handling, Joe → Readability &amp;
-				Comments).
+				looked at which parts of the repo (here: you → Security &amp; Correctness, Joe → Performance &amp; Structure
+				&amp; architecture).
 			</li>
 			<li>
 				<strong class="text-kood-text/90">During the session</strong> take notes. Anyone can facilitate; capture
@@ -56,7 +56,7 @@
 		<ol class="mt-4 list-decimal space-y-4 pl-5 text-sm text-kood-text/90">
 			<li>
 				<strong class="text-kood-text">You — assigned categories</strong>
-				<span class="text-kood-muted"> (Security, Exception handling)</span>
+				<span class="text-kood-muted"> (Security, Correctness)</span>
 				<p class="mt-1 text-kood-muted">
 					Walk through main findings, feedback sent to Sandra, and what changed since. Peers ask clarifying questions
 					only — you own the narrative for your scope.
@@ -64,7 +64,7 @@
 			</li>
 			<li>
 				<strong class="text-kood-text">Joe — assigned categories</strong>
-				<span class="text-kood-muted"> (Readability, How to write comments)</span>
+				<span class="text-kood-muted"> (Performance, Structure &amp; architecture)</span>
 				<p class="mt-1 text-kood-muted">
 					Same pattern: outcomes, trade-offs, anything still fuzzy. Keep cross-talk light until step 3.
 				</p>
@@ -72,8 +72,8 @@
 			<li>
 				<strong class="text-kood-text">Cross-review awareness</strong>
 				<p class="mt-1 text-kood-muted">
-					How did each reviewer show up in the <em>other</em> person’s themes? (e.g. security-aware comments in
-					readable code, or clarity risks in exception paths.) Aim for constructive, specific examples.
+					How did each reviewer show up in the <em>other</em> person’s themes? (e.g. security or correctness angles on
+					performance work, or scalability and layering risks in sensitive paths.) Aim for constructive, specific examples.
 				</p>
 			</li>
 			<li>

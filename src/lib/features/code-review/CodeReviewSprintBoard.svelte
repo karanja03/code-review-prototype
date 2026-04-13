@@ -128,14 +128,14 @@
 		<h2 class="text-xl font-semibold text-kood-text">Sprint · category observations</h2>
 		<p class="mt-1 text-sm text-kood-muted">
 			{#if app.role === 'joe'}
-				You own Readability &amp; Comments; the other reviewer owns Security &amp; Exception handling. Only the assignee
-				Accepts/Declines; the peer reads along and can use the thread.
+				You own Performance and Structure &amp; architecture; the other reviewer owns Security and Correctness. Only the
+				assignee Accepts/Declines; the peer reads along and can use the thread.
 			{:else if app.role === 'sandra'}
-				Reviewer 1 owns Security &amp; Exception handling; Joe owns Readability &amp; Comments. Only the assignee
-				Accepts/Declines; the peer reads along and can use the thread.
+				Reviewer 1 (You) owns Security and Correctness; Joe owns Performance and Structure &amp; architecture. Only the
+				assignee Accepts/Declines; the peer reads along and can use the thread.
 			{:else}
-				You own Security &amp; Exception handling; Joe owns Readability &amp; Comments. Only the assignee Accepts/Declines;
-				the peer reads along and can use the thread.
+				You own Security and Correctness; Joe owns Performance and Structure &amp; architecture. Only the assignee
+				Accepts/Declines; the peer reads along and can use the thread.
 			{/if}
 		</p>
 	</header>

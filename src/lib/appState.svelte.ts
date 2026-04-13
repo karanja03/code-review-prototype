@@ -92,10 +92,10 @@ function mergeCategorySessions(
 
 function defaultSandraRatings(): SandraRating[] {
 	return [
-		{ categoryId: 'readability', score: null, comment: '', submitted: false },
-		{ categoryId: 'comments', score: null, comment: '', submitted: false },
 		{ categoryId: 'security', score: null, comment: '', submitted: false },
-		{ categoryId: 'exceptions', score: null, comment: '', submitted: false }
+		{ categoryId: 'correctness', score: null, comment: '', submitted: false },
+		{ categoryId: 'performance', score: null, comment: '', submitted: false },
+		{ categoryId: 'structure_architecture', score: null, comment: '', submitted: false }
 	];
 }
 
@@ -159,6 +159,29 @@ function normalizeReviewerAssignmentAccepted(
 	};
 }
 
+/** Re-align stored Sandra ratings when category ids change (e.g. after prototype updates). */
+function normalizeSandraRatings(parsed: unknown): SandraRating[] {
+	const base = defaultSandraRatings();
+	if (!Array.isArray(parsed)) return base;
+	const byId = new Map<string, SandraRating>();
+	for (const x of parsed) {
+		if (!x || typeof x !== 'object') continue;
+		const r = x as SandraRating;
+		if (typeof r.categoryId !== 'string') continue;
+		byId.set(r.categoryId, {
+			categoryId: r.categoryId,
+			score: typeof r.score === 'number' || r.score === null ? r.score : null,
+			comment: typeof r.comment === 'string' ? r.comment : '',
+			submitted: Boolean(r.submitted)
+		});
+	}
+	return base.map((row) => {
+		const old = byId.get(row.categoryId);
+		if (!old) return { ...row };
+		return { ...row, score: old.score, comment: old.comment, submitted: old.submitted };
+	});
+}
+
 function load(): Snapshot {
 	if (!browser) return createInitialSnapshot();
 	try {
@@ -180,7 +203,7 @@ function load(): Snapshot {
 			reviewerRatings: p.reviewerRatings
 				? { ...base.reviewerRatings, ...p.reviewerRatings }
 				: base.reviewerRatings,
-			sandraRatings: p.sandraRatings?.length ? p.sandraRatings : base.sandraRatings,
+			sandraRatings: normalizeSandraRatings(p.sandraRatings),
 			standupItems: normalizeStandupItems(p.standupItems, base.standupItems),
 			standupWhen: typeof p.standupWhen === 'string' ? p.standupWhen : base.standupWhen,
 			standupVoiceChannel:

@@ -3,7 +3,7 @@
 		{ day: 1, title: 'Kickoff', desc: "Agree on scope, requirements, and what 'done' means.", phase: 'Prepare' },
 		{ day: 2, title: 'First pass', desc: 'Reviewer checks core flows and notes risks early.', phase: 'Prepare' },
 		{ day: 3, title: 'Fix window', desc: 'Submitter iterates; reviewer stays available for quick checks.', phase: 'Prepare' },
-		{ day: 4, title: 'Deep dive', desc: 'Edge cases, error handling, readability, structure.', phase: 'Review' },
+		{ day: 4, title: 'Deep dive', desc: 'Edge cases, correctness, performance, structure.', phase: 'Review' },
 		{ day: 5, title: 'Polish', desc: 'Tighten naming, logs, docs, and test coverage.', phase: 'Review' },
 		{ day: 6, title: 'Verify', desc: 'Re-test critical flows. Confirm all issues resolved.', phase: 'Close', highlight: true },
 		{ day: 7, title: 'Close out', desc: 'Summarise: what was tested, what improved, what remains.', phase: 'Close', highlight: true }
