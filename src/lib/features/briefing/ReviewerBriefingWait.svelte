@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { CATEGORIES } from '$lib/constants';
-	import { getApp } from '$lib/appState.svelte';
+	import { assignedNameForSlot, getApp } from '$lib/appState.svelte';
 
 	const app = getApp();
 
@@ -9,6 +9,7 @@
 	const myCats = $derived(app.role === 'jane' ? janeCats : joeCats);
 	const peerName = $derived(app.role === 'jane' ? 'Joe' : 'You');
 	const peerCats = $derived(app.role === 'jane' ? joeCats : janeCats);
+	const submitterName = $derived(assignedNameForSlot('submitter') || 'the submitter');
 </script>
 
 <div class="mx-auto max-w-2xl space-y-8">
@@ -18,8 +19,8 @@
 	>
 		<p class="font-semibold text-kood-text">Reviewer · waiting on submitter</p>
 		<p class="mt-1 text-kood-muted">
-			You do <strong class="text-kood-text/90">not</strong> start this project. Only the submitter (Sandra in this
-			demo) presses <strong class="text-kood-text/90">Start</strong> on Mobile Messenger.
+			Hold tight, <strong class="text-kood-text/90">{submitterName}</strong> was assigned this project to start.
+			Once they click <strong class="text-kood-text/90">Start</strong>, your reviewer workflow unlocks.
 		</p>
 	</div>
 

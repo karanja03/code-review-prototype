@@ -1,0 +1,561 @@
+{
+  "snapshot": {
+    "loggedIn": false,
+    "isAdminSession": false,
+    "currentUserName": "",
+    "registeredUsers": [],
+    "role": "sandra",
+    "phase": "briefing",
+    "projectStarted": false,
+    "submittedForReview": false,
+    "testingRound": 1,
+    "testingItems": [
+      {
+        "id": "m1",
+        "section": "mandatory",
+        "text": "Repository contains complete source code and configuration files.",
+        "mandatoryOwner": "jane",
+        "jane": "pending",
+        "joe": "pending",
+        "verdictHistory": [],
+        "comments": [],
+        "drafts": {}
+      },
+      {
+        "id": "m2",
+        "section": "mandatory",
+        "text": "Documentation (README) includes all required sections: project overview, complete setup instructions, usage guide.",
+        "mandatoryOwner": "jane",
+        "jane": "pending",
+        "joe": "pending",
+        "verdictHistory": [],
+        "comments": [],
+        "drafts": {}
+      },
+      {
+        "id": "m3",
+        "section": "mandatory",
+        "text": "Application runs successfully on a virtual or physical device with chosen platform (Android/iOS).",
+        "mandatoryOwner": "jane",
+        "jane": "pending",
+        "joe": "pending",
+        "verdictHistory": [],
+        "comments": [],
+        "drafts": {}
+      },
+      {
+        "id": "m4",
+        "section": "mandatory",
+        "text": "User can create an account with email, username and password.",
+        "mandatoryOwner": "jane",
+        "jane": "pending",
+        "joe": "pending",
+        "verdictHistory": [],
+        "comments": [],
+        "drafts": {}
+      },
+      {
+        "id": "m5",
+        "section": "mandatory",
+        "text": "Registration is not allowed if email or username is already in use. User receives proper visual feedback.",
+        "mandatoryOwner": "jane",
+        "jane": "pending",
+        "joe": "pending",
+        "verdictHistory": [],
+        "comments": [],
+        "drafts": {}
+      },
+      {
+        "id": "m6",
+        "section": "mandatory",
+        "text": "Application checks password strength: ≥8 characters, lowercase, uppercase, digit, special character. Registration blocked if weak; user gets visual feedback.",
+        "mandatoryOwner": "jane",
+        "jane": "pending",
+        "joe": "pending",
+        "verdictHistory": [],
+        "comments": [],
+        "drafts": {}
+      },
+      {
+        "id": "m7",
+        "section": "mandatory",
+        "text": "User receives verification email after creating an account.",
+        "mandatoryOwner": "jane",
+        "jane": "pending",
+        "joe": "pending",
+        "verdictHistory": [],
+        "comments": [],
+        "drafts": {}
+      },
+      {
+        "id": "m8",
+        "section": "mandatory",
+        "text": "User needs email and password to log in to the messenger.",
+        "mandatoryOwner": "jane",
+        "jane": "pending",
+        "joe": "pending",
+        "verdictHistory": [],
+        "comments": [],
+        "drafts": {}
+      },
+      {
+        "id": "m9",
+        "section": "mandatory",
+        "text": "User can reset their account password.",
+        "mandatoryOwner": "jane",
+        "jane": "pending",
+        "joe": "pending",
+        "verdictHistory": [],
+        "comments": [],
+        "drafts": {}
+      },
+      {
+        "id": "m10",
+        "section": "mandatory",
+        "text": "Authentication persistence unless explicit logout or session expiry — verify by closing and reopening the app; user stays logged in.",
+        "mandatoryOwner": "jane",
+        "jane": "pending",
+        "joe": "pending",
+        "verdictHistory": [],
+        "comments": [],
+        "drafts": {}
+      },
+      {
+        "id": "m11",
+        "section": "mandatory",
+        "text": "User has a profile page with at least username, profile picture, and About Me sections.",
+        "mandatoryOwner": "jane",
+        "jane": "pending",
+        "joe": "pending",
+        "verdictHistory": [],
+        "comments": [],
+        "drafts": {}
+      },
+      {
+        "id": "m12",
+        "section": "mandatory",
+        "text": "Default profile picture on first login; About Me empty initially.",
+        "mandatoryOwner": "jane",
+        "jane": "pending",
+        "joe": "pending",
+        "verdictHistory": [],
+        "comments": [],
+        "drafts": {}
+      },
+      {
+        "id": "m13",
+        "section": "mandatory",
+        "text": "Profile picture upload supports at least JPEG and PNG (5MB limit per spec).",
+        "mandatoryOwner": "jane",
+        "jane": "pending",
+        "joe": "pending",
+        "verdictHistory": [],
+        "comments": [],
+        "drafts": {}
+      },
+      {
+        "id": "m14",
+        "section": "mandatory",
+        "text": "User can edit any data in their profile.",
+        "mandatoryOwner": "jane",
+        "jane": "pending",
+        "joe": "pending",
+        "verdictHistory": [],
+        "comments": [],
+        "drafts": {}
+      },
+      {
+        "id": "m15",
+        "section": "mandatory",
+        "text": "User can search for contacts by username or by email.",
+        "mandatoryOwner": "jane",
+        "jane": "pending",
+        "joe": "pending",
+        "verdictHistory": [],
+        "comments": [],
+        "drafts": {}
+      },
+      {
+        "id": "m16",
+        "section": "mandatory",
+        "text": "User can send chat invitations to other users.",
+        "mandatoryOwner": "joe",
+        "jane": "pending",
+        "joe": "pending",
+        "verdictHistory": [],
+        "comments": [],
+        "drafts": {}
+      },
+      {
+        "id": "m17",
+        "section": "mandatory",
+        "text": "User can accept or decline invitations; application has a pending invitation section.",
+        "mandatoryOwner": "joe",
+        "jane": "pending",
+        "joe": "pending",
+        "verdictHistory": [],
+        "comments": [],
+        "drafts": {}
+      },
+      {
+        "id": "m18",
+        "section": "mandatory",
+        "text": "Chat list sorted by time of last message received or sent.",
+        "mandatoryOwner": "joe",
+        "jane": "pending",
+        "joe": "pending",
+        "verdictHistory": [],
+        "comments": [],
+        "drafts": {}
+      },
+      {
+        "id": "m19",
+        "section": "mandatory",
+        "text": "User can archive and unarchive chats.",
+        "mandatoryOwner": "joe",
+        "jane": "pending",
+        "joe": "pending",
+        "verdictHistory": [],
+        "comments": [],
+        "drafts": {}
+      },
+      {
+        "id": "m20",
+        "section": "mandatory",
+        "text": "Users can send text messages to each other.",
+        "mandatoryOwner": "joe",
+        "jane": "pending",
+        "joe": "pending",
+        "verdictHistory": [],
+        "comments": [],
+        "drafts": {}
+      },
+      {
+        "id": "m21",
+        "section": "mandatory",
+        "text": "Users can send images to each other.",
+        "mandatoryOwner": "joe",
+        "jane": "pending",
+        "joe": "pending",
+        "verdictHistory": [],
+        "comments": [],
+        "drafts": {}
+      },
+      {
+        "id": "m22",
+        "section": "mandatory",
+        "text": "Users can send videos to each other.",
+        "mandatoryOwner": "joe",
+        "jane": "pending",
+        "joe": "pending",
+        "verdictHistory": [],
+        "comments": [],
+        "drafts": {}
+      },
+      {
+        "id": "m23",
+        "section": "mandatory",
+        "text": "Typing indicators show when either user is composing a message in real time.",
+        "mandatoryOwner": "joe",
+        "jane": "pending",
+        "joe": "pending",
+        "verdictHistory": [],
+        "comments": [],
+        "drafts": {}
+      },
+      {
+        "id": "m24",
+        "section": "mandatory",
+        "text": "Each message shows sent and delivered state.",
+        "mandatoryOwner": "joe",
+        "jane": "pending",
+        "joe": "pending",
+        "verdictHistory": [],
+        "comments": [],
+        "drafts": {}
+      },
+      {
+        "id": "m25",
+        "section": "mandatory",
+        "text": "On failed delivery, user receives clear visual feedback.",
+        "mandatoryOwner": "joe",
+        "jane": "pending",
+        "joe": "pending",
+        "verdictHistory": [],
+        "comments": [],
+        "drafts": {}
+      },
+      {
+        "id": "m26",
+        "section": "mandatory",
+        "text": "Each message shows whether it has been read by the recipient.",
+        "mandatoryOwner": "joe",
+        "jane": "pending",
+        "joe": "pending",
+        "verdictHistory": [],
+        "comments": [],
+        "drafts": {}
+      },
+      {
+        "id": "m27",
+        "section": "mandatory",
+        "text": "User can edit and delete their own messages in the chat.",
+        "mandatoryOwner": "joe",
+        "jane": "pending",
+        "joe": "pending",
+        "verdictHistory": [],
+        "comments": [],
+        "drafts": {}
+      },
+      {
+        "id": "m28",
+        "section": "mandatory",
+        "text": "Data persists after restarting the application.",
+        "mandatoryOwner": "joe",
+        "jane": "pending",
+        "joe": "pending",
+        "verdictHistory": [],
+        "comments": [],
+        "drafts": {}
+      },
+      {
+        "id": "m29",
+        "section": "mandatory",
+        "text": "Messages, media, profile information, and chat list contents are encrypted before reaching the database.",
+        "mandatoryOwner": "joe",
+        "jane": "pending",
+        "joe": "pending",
+        "verdictHistory": [],
+        "comments": [],
+        "drafts": {}
+      },
+      {
+        "id": "m30",
+        "section": "mandatory",
+        "text": "On errors/exceptions, messenger returns to last stable state when possible; user receives visual feedback about the error.",
+        "mandatoryOwner": "joe",
+        "jane": "pending",
+        "joe": "pending",
+        "verdictHistory": [],
+        "comments": [],
+        "drafts": {}
+      },
+      {
+        "id": "e1",
+        "section": "extra",
+        "text": "Code is properly organized with logical lib structure, consistent naming and formatting.",
+        "jane": "pending",
+        "joe": "pending",
+        "verdictHistory": [],
+        "comments": [],
+        "drafts": {}
+      },
+      {
+        "id": "e2",
+        "section": "extra",
+        "text": "All tabs share a common theme; interface is intuitive and user-friendly.",
+        "jane": "pending",
+        "joe": "pending",
+        "verdictHistory": [],
+        "comments": [],
+        "drafts": {}
+      },
+      {
+        "id": "e3",
+        "section": "extra",
+        "text": "Easy launch without full Flutter setup: .apk provided with instructions for device, lightweight emulator, and browser-based emulator; backend starts with a single command (Docker allowed).",
+        "jane": "pending",
+        "joe": "pending",
+        "verdictHistory": [],
+        "comments": [],
+        "drafts": {}
+      },
+      {
+        "id": "e4",
+        "section": "extra",
+        "text": "Application supports recording and sending audio messages in chat.",
+        "jane": "pending",
+        "joe": "pending",
+        "verdictHistory": [],
+        "comments": [],
+        "drafts": {}
+      },
+      {
+        "id": "e5",
+        "section": "extra",
+        "text": "Push notifications for new messages and invites; user can mute notifications per chat.",
+        "jane": "pending",
+        "joe": "pending",
+        "verdictHistory": [],
+        "comments": [],
+        "drafts": {}
+      },
+      {
+        "id": "e6",
+        "section": "extra",
+        "text": "Application uses additional technologies/features beyond core requirements (bonus).",
+        "jane": "pending",
+        "joe": "pending",
+        "verdictHistory": [],
+        "comments": [],
+        "drafts": {}
+      }
+    ],
+    "categorySessions": {
+      "readability": {
+        "categoryId": "readability",
+        "completed": false,
+        "checks": {
+          "r1": false,
+          "r2": false,
+          "r3": false,
+          "r4": false
+        },
+        "lockedObservationIds": {},
+        "draftComments": {
+          "r1": "",
+          "r2": "",
+          "r3": "",
+          "r4": ""
+        },
+        "iterations": [],
+        "pendingNudge": null
+      },
+      "security": {
+        "categoryId": "security",
+        "completed": false,
+        "checks": {
+          "s1": false,
+          "s2": false,
+          "s3": false,
+          "s4": false
+        },
+        "lockedObservationIds": {},
+        "draftComments": {
+          "s1": "",
+          "s2": "",
+          "s3": "",
+          "s4": ""
+        },
+        "iterations": [],
+        "pendingNudge": null
+      },
+      "exceptions": {
+        "categoryId": "exceptions",
+        "completed": false,
+        "checks": {
+          "e1": false,
+          "e2": false,
+          "e3": false,
+          "e4": false
+        },
+        "lockedObservationIds": {},
+        "draftComments": {
+          "e1": "",
+          "e2": "",
+          "e3": "",
+          "e4": ""
+        },
+        "iterations": [],
+        "pendingNudge": null
+      },
+      "comments": {
+        "categoryId": "comments",
+        "completed": false,
+        "checks": {
+          "c1": false,
+          "c2": false,
+          "c3": false,
+          "c4": false
+        },
+        "lockedObservationIds": {},
+        "draftComments": {
+          "c1": "",
+          "c2": "",
+          "c3": "",
+          "c4": ""
+        },
+        "iterations": [],
+        "pendingNudge": null
+      }
+    },
+    "standupItems": [
+      false,
+      false,
+      false,
+      false,
+      false
+    ],
+    "standupWhen": "",
+    "standupVoiceChannel": "",
+    "standupTakeaways": "",
+    "sandraRatings": [
+      {
+        "categoryId": "readability",
+        "score": null,
+        "comment": "",
+        "submitted": false
+      },
+      {
+        "categoryId": "comments",
+        "score": null,
+        "comment": "",
+        "submitted": false
+      },
+      {
+        "categoryId": "security",
+        "score": null,
+        "comment": "",
+        "submitted": false
+      },
+      {
+        "categoryId": "exceptions",
+        "score": null,
+        "comment": "",
+        "submitted": false
+      }
+    ],
+    "reviewerRatings": {
+      "jane": {
+        "readableCode": {
+          "score": null,
+          "comment": "",
+          "submitted": false
+        },
+        "codeComments": {
+          "score": null,
+          "comment": "",
+          "submitted": false
+        },
+        "crossReviewer": {
+          "score": null,
+          "comment": "",
+          "submitted": false
+        }
+      },
+      "joe": {
+        "readableCode": {
+          "score": null,
+          "comment": "",
+          "submitted": false
+        },
+        "codeComments": {
+          "score": null,
+          "comment": "",
+          "submitted": false
+        },
+        "crossReviewer": {
+          "score": null,
+          "comment": "",
+          "submitted": false
+        }
+      }
+    },
+    "xpMock": 0,
+    "leaderboardNote": "Feedback feeds XP and the leaderboard (mock).",
+    "reviewerAssignmentAccepted": {
+      "jane": false,
+      "joe": false
+    }
+  }
+}

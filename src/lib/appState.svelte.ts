@@ -1,12 +1,16 @@
 import { browser } from '$app/environment';
 import { seedCategorySessionsForJoeDemo, seedTestingItemsForYouJoeDemo } from '$lib/demo/youJoeDemoSeed';
 import { createFullTestingItems } from '$lib/features/testing/checklist';
-import { CATEGORIES, emptyObservationRowsForCategory, ACADEMY_BASE } from './constants';
+import { MESSENGER_REPO } from '$lib/koodUi';
+import { CATEGORIES, emptyChecks, emptyDraftComments, ACADEMY_BASE } from './constants';
 import type {
+	AdminSlot,
 	CategorySession,
 	CodeReviewListEntry,
 	CodeReviewObservationRowState,
 	Phase,
+	RegisteredUser,
+	ReviewIterationRecord,
 	Role,
 	SandraRating,
 	ReviewerRatingSet,
@@ -14,11 +18,17 @@ import type {
 	TestingItem
 } from './types';
 
-/** Used by `+layout.svelte` for `localStorage` sync. */
-export const APP_STATE_STORAGE_KEY = 'kood-code-review-prototype-v1';
+/** Used by layout for server JSON sync. */
+export const APP_STATE_API_PATH = '/api/prototype-state';
+let lastServerSnapshotJson = '';
 
 function uid() {
 	return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+}
+
+function debugLog(event: string, payload?: unknown) {
+	if (!browser) return;
+	console.info(`[appState] ${event}`, payload ?? '');
 }
 
 function mergeTestingFromStorage(parsed: unknown): TestingItem[] {
@@ -112,6 +122,10 @@ export type Toast = { id: string; message: string };
 
 function createInitialSnapshot() {
 	return {
+		loggedIn: false,
+		isAdminSession: false,
+		currentUserName: '',
+		registeredUsers: [] as RegisteredUser[],
 		role: 'sandra' as Role,
 		phase: 'briefing' as Phase,
 		projectStarted: false,
@@ -128,8 +142,8 @@ function createInitialSnapshot() {
 		reviewerRatings: defaultReviewerRatings(),
 		xpMock: 0,
 		leaderboardNote: 'Feedback feeds XP and the leaderboard (mock).',
-		// Joe skips the assignment checkbox in this demo (work is already reflected).
-		reviewerAssignmentAccepted: { jane: false, joe: true }
+		reviewerAssignmentAccepted: { jane: false, joe: false },
+		latestSubmission: null as null | { by: string; at: string; repo: string }
 	};
 }
 
@@ -182,42 +196,205 @@ function normalizeSandraRatings(parsed: unknown): SandraRating[] {
 	});
 }
 
-function load(): Snapshot {
-	if (!browser) return createInitialSnapshot();
-	try {
-		const raw = localStorage.getItem(APP_STATE_STORAGE_KEY);
-		if (!raw) return createInitialSnapshot();
-		const p = JSON.parse(raw) as Partial<Snapshot>;
-		const base = createInitialSnapshot();
-		return {
-			...base,
-			...p,
-			testingItems: mergeTestingFromStorage(p.testingItems),
-			testingRound:
-				typeof p.testingRound === 'number' && p.testingRound >= 1 ? p.testingRound : base.testingRound,
-			categorySessions: mergeCategorySessions(base.categorySessions, p.categorySessions),
-			codeReviewRound:
-				typeof p.codeReviewRound === 'number' && p.codeReviewRound >= 1
-					? p.codeReviewRound
-					: base.codeReviewRound,
-			reviewerRatings: p.reviewerRatings
-				? { ...base.reviewerRatings, ...p.reviewerRatings }
-				: base.reviewerRatings,
-			sandraRatings: normalizeSandraRatings(p.sandraRatings),
-			standupItems: normalizeStandupItems(p.standupItems, base.standupItems),
-			standupWhen: typeof p.standupWhen === 'string' ? p.standupWhen : base.standupWhen,
-			standupVoiceChannel:
-				typeof p.standupVoiceChannel === 'string' ? p.standupVoiceChannel : base.standupVoiceChannel,
-			standupTakeaways:
-				typeof p.standupTakeaways === 'string' ? p.standupTakeaways : base.standupTakeaways,
-			reviewerAssignmentAccepted: normalizeReviewerAssignmentAccepted(
-				p.reviewerAssignmentAccepted,
-				base.reviewerAssignmentAccepted
-			)
-		};
-	} catch {
-		return createInitialSnapshot();
+function normalizeRegisteredUsers(parsed: unknown): RegisteredUser[] {
+	if (!Array.isArray(parsed)) return [];
+	const out: RegisteredUser[] = [];
+	for (const row of parsed) {
+		if (!row || typeof row !== 'object') continue;
+		const v = row as Record<string, unknown>;
+		if (typeof v.id !== 'string' || typeof v.name !== 'string') continue;
+		const assignedSlot =
+			v.assignedSlot === 'submitter' || v.assignedSlot === 'reviewer1' || v.assignedSlot === 'reviewer2'
+				? v.assignedSlot
+				: null;
+		out.push({
+			id: v.id,
+			name: v.name.trim(),
+			joinedAt: typeof v.joinedAt === 'string' ? v.joinedAt : new Date().toISOString(),
+			lastSeenAt: typeof v.lastSeenAt === 'string' ? v.lastSeenAt : new Date().toISOString(),
+			assignedSlot,
+			assignedAt: typeof v.assignedAt === 'string' ? v.assignedAt : null,
+			assignedBy: typeof v.assignedBy === 'string' ? v.assignedBy : null,
+			isAdmin: Boolean(v.isAdmin)
+		});
 	}
+	return out.filter((x) => x.name.length > 0);
+}
+
+function slotToRole(slot: AdminSlot): Role {
+	if (slot === 'submitter') return 'sandra';
+	if (slot === 'reviewer1') return 'jane';
+	return 'joe';
+}
+
+function roleForUserName(users: RegisteredUser[], name: string): Role | null {
+	const who = users.find((x) => x.name.toLowerCase() === name.toLowerCase());
+	if (!who?.assignedSlot) return null;
+	return slotToRole(who.assignedSlot);
+}
+
+function slotForUserName(users: RegisteredUser[], name: string): AdminSlot | null {
+	const who = users.find((x) => x.name.toLowerCase() === name.toLowerCase());
+	return who?.assignedSlot ?? null;
+}
+
+function slotLabel(slot: AdminSlot | null): string {
+	if (!slot) return 'Unassigned';
+	if (slot === 'submitter') return 'Submitter';
+	if (slot === 'reviewer1') return 'Reviewer 1';
+	return 'Reviewer 2';
+}
+
+export function slotLabelText(slot: AdminSlot | null): string {
+	return slotLabel(slot);
+}
+
+function ensureRegisteredParticipant(name: string, nowIso = new Date().toISOString()) {
+	const normalized = name.trim();
+	if (!normalized) return;
+	const idx = data.registeredUsers.findIndex((x) => x.name.toLowerCase() === normalized.toLowerCase());
+	if (idx >= 0) {
+		data.registeredUsers[idx].name = normalized;
+		data.registeredUsers[idx].lastSeenAt = nowIso;
+		data.registeredUsers[idx].isAdmin = false;
+		debugLog('participant_updated', { name: normalized, id: data.registeredUsers[idx].id });
+		return;
+	}
+	data.registeredUsers.push({
+		id: uid(),
+		name: normalized,
+		joinedAt: nowIso,
+		lastSeenAt: nowIso,
+		assignedSlot: null,
+		assignedAt: null,
+		assignedBy: null,
+		isAdmin: false
+	});
+	debugLog('participant_created', { name: normalized });
+}
+
+function applySnapshotPatch(p: Partial<Snapshot>, preserveSession = true) {
+	const base = createInitialSnapshot();
+	const currentSession = {
+		loggedIn: data.loggedIn,
+		isAdminSession: data.isAdminSession,
+		currentUserName: data.currentUserName,
+		role: data.role
+	};
+	const merged = {
+		...base,
+		...p,
+		loggedIn: typeof p.loggedIn === 'boolean' ? p.loggedIn : base.loggedIn,
+		isAdminSession: typeof p.isAdminSession === 'boolean' ? p.isAdminSession : base.isAdminSession,
+		currentUserName: typeof p.currentUserName === 'string' ? p.currentUserName : base.currentUserName,
+		registeredUsers: normalizeRegisteredUsers(p.registeredUsers),
+		testingItems: mergeTestingFromStorage(p.testingItems),
+		testingRound:
+			typeof p.testingRound === 'number' && p.testingRound >= 1 ? p.testingRound : base.testingRound,
+		categorySessions: mergeCategorySessions(base.categorySessions, p.categorySessions),
+		reviewerRatings: p.reviewerRatings ? { ...base.reviewerRatings, ...p.reviewerRatings } : base.reviewerRatings,
+		sandraRatings: p.sandraRatings?.length ? p.sandraRatings : base.sandraRatings,
+		standupItems: normalizeStandupItems(p.standupItems, base.standupItems),
+		standupWhen: typeof p.standupWhen === 'string' ? p.standupWhen : base.standupWhen,
+		standupVoiceChannel:
+			typeof p.standupVoiceChannel === 'string' ? p.standupVoiceChannel : base.standupVoiceChannel,
+		standupTakeaways:
+			typeof p.standupTakeaways === 'string' ? p.standupTakeaways : base.standupTakeaways,
+		reviewerAssignmentAccepted: normalizeReviewerAssignmentAccepted(
+			p.reviewerAssignmentAccepted,
+			base.reviewerAssignmentAccepted
+		)
+	};
+
+	if (merged.loggedIn && !merged.isAdminSession && merged.currentUserName.trim()) {
+		const name = merged.currentUserName.trim();
+		const exists = merged.registeredUsers.some((x) => x.name.toLowerCase() === name.toLowerCase());
+		if (!exists) {
+			merged.registeredUsers.push({
+				id: uid(),
+				name,
+				joinedAt: new Date().toISOString(),
+				lastSeenAt: new Date().toISOString(),
+				assignedSlot: null,
+				assignedAt: null,
+				assignedBy: null,
+				isAdmin: false
+			});
+		}
+	}
+
+	if (preserveSession) {
+		data.loggedIn = currentSession.loggedIn;
+		data.isAdminSession = currentSession.isAdminSession;
+		data.currentUserName = currentSession.currentUserName;
+		data.role = currentSession.role;
+	} else {
+		data.loggedIn = merged.loggedIn;
+		data.isAdminSession = merged.isAdminSession;
+		data.currentUserName = merged.currentUserName;
+		data.role = merged.role;
+	}
+	data.registeredUsers = merged.registeredUsers;
+	data.phase = merged.phase;
+	data.projectStarted = merged.projectStarted;
+	data.submittedForReview = merged.submittedForReview;
+	data.testingItems = merged.testingItems;
+	data.testingRound = merged.testingRound;
+	data.categorySessions = merged.categorySessions;
+	data.standupItems = merged.standupItems;
+	data.standupWhen = merged.standupWhen;
+	data.standupVoiceChannel = merged.standupVoiceChannel;
+	data.standupTakeaways = merged.standupTakeaways;
+	data.sandraRatings = merged.sandraRatings;
+	data.reviewerRatings = merged.reviewerRatings;
+	data.xpMock = merged.xpMock;
+	data.leaderboardNote = merged.leaderboardNote;
+	data.reviewerAssignmentAccepted = merged.reviewerAssignmentAccepted;
+	data.latestSubmission = merged.latestSubmission ?? null;
+
+	if (
+		preserveSession &&
+		currentSession.loggedIn &&
+		!currentSession.isAdminSession &&
+		currentSession.currentUserName.trim()
+	) {
+		const mappedRole = roleForUserName(merged.registeredUsers, currentSession.currentUserName);
+		if (mappedRole && mappedRole !== currentSession.role) {
+			data.role = mappedRole;
+			const slot = slotForUserName(merged.registeredUsers, currentSession.currentUserName);
+			pushToast(`Great news! You were assigned as ${slotLabel(slot)}.`);
+		}
+	}
+}
+
+function createSnapshotFromData(): Snapshot {
+	return {
+		loggedIn: false,
+		isAdminSession: false,
+		currentUserName: '',
+		registeredUsers: data.registeredUsers,
+		role: 'sandra',
+		phase: data.phase,
+		projectStarted: data.projectStarted,
+		submittedForReview: data.submittedForReview,
+		testingRound: data.testingRound,
+		testingItems: data.testingItems,
+		categorySessions: data.categorySessions,
+		standupItems: data.standupItems,
+		standupWhen: data.standupWhen,
+		standupVoiceChannel: data.standupVoiceChannel,
+		standupTakeaways: data.standupTakeaways,
+		sandraRatings: data.sandraRatings,
+		reviewerRatings: data.reviewerRatings,
+		xpMock: data.xpMock,
+		leaderboardNote: data.leaderboardNote,
+		reviewerAssignmentAccepted: data.reviewerAssignmentAccepted,
+		latestSubmission: data.latestSubmission
+	};
+}
+
+function load(): Snapshot {
+	return createInitialSnapshot();
 }
 
 const data = $state(load());
@@ -242,7 +419,171 @@ export function pushToast(message: string) {
 }
 
 export function setRole(role: Role) {
+	if (data.isAdminSession) return;
 	data.role = role;
+}
+
+export function loginWithName(name: string) {
+	const normalized = name.trim();
+	if (!normalized) return;
+	const nowIso = new Date().toISOString();
+	const isAdmin = normalized.toLowerCase() === 'admin';
+	data.currentUserName = normalized;
+	data.loggedIn = true;
+	data.isAdminSession = isAdmin;
+
+	if (!isAdmin) {
+		ensureRegisteredParticipant(normalized, nowIso);
+		const mappedRole = roleForUserName(data.registeredUsers, normalized);
+		if (mappedRole) {
+			data.role = mappedRole;
+		}
+		// Persist participant registration immediately for cross-tab/browser visibility.
+		void persistAppStateToServer();
+	}
+	debugLog('login_with_name', {
+		name: normalized,
+		isAdmin,
+		registeredUsers: data.registeredUsers.map((x) => ({
+			id: x.id,
+			name: x.name,
+			isAdmin: x.isAdmin,
+			assignedSlot: x.assignedSlot
+		}))
+	});
+
+	pushToast(isAdmin ? 'Admin dashboard unlocked.' : `Welcome, ${normalized}.`);
+}
+
+export function logoutUser() {
+	data.currentUserName = '';
+	data.loggedIn = false;
+	data.isAdminSession = false;
+	pushToast('Logged out.');
+}
+
+export function adminParticipantList(): RegisteredUser[] {
+	const list = data.registeredUsers
+		.filter((x) => !x.isAdmin)
+		.slice()
+		.sort((a, b) => a.name.localeCompare(b.name));
+	debugLog('admin_participant_list', { count: list.length, names: list.map((x) => x.name) });
+	return list;
+}
+
+export const ADMIN_SLOT_OPTIONS: { id: AdminSlot; label: string }[] = [
+	{ id: 'submitter', label: 'Submitter' },
+	{ id: 'reviewer1', label: 'Reviewer 1' },
+	{ id: 'reviewer2', label: 'Reviewer 2' }
+];
+
+export function assignedNameForSlot(slot: AdminSlot): string {
+	return data.registeredUsers.find((x) => x.assignedSlot === slot)?.name ?? '';
+}
+
+export function assignedSlotForCurrentUser(): AdminSlot | null {
+	const me = data.currentUserName.trim();
+	if (!me) return null;
+	return slotForUserName(data.registeredUsers, me);
+}
+
+export function adminAssignSlot(slot: AdminSlot, name: string) {
+	if (!data.isAdminSession) return;
+	const normalized = name.trim();
+	for (const user of data.registeredUsers) {
+		if (user.assignedSlot === slot) {
+			user.assignedSlot = null;
+			user.assignedAt = null;
+			user.assignedBy = null;
+		}
+	}
+	if (!normalized) return;
+
+	const target = data.registeredUsers.find((x) => x.name.toLowerCase() === normalized.toLowerCase());
+	if (!target || target.isAdmin) return;
+
+	if (target.assignedSlot && target.assignedSlot !== slot) {
+		target.assignedSlot = null;
+		target.assignedAt = null;
+		target.assignedBy = null;
+	}
+	target.assignedSlot = slot;
+	target.assignedAt = new Date().toISOString();
+	target.assignedBy = data.currentUserName || 'admin';
+	debugLog('admin_assign_slot', { slot, name: target.name });
+	pushToast(`${target.name} assigned as ${ADMIN_SLOT_OPTIONS.find((x) => x.id === slot)?.label ?? slot}.`);
+	void persistAppStateToServer();
+}
+
+export function roleAssignmentsComplete(): boolean {
+	return Boolean(assignedNameForSlot('submitter') && assignedNameForSlot('reviewer1') && assignedNameForSlot('reviewer2'));
+}
+
+export function roleAssignmentDetails() {
+	return (['submitter', 'reviewer1', 'reviewer2'] as AdminSlot[]).map((slot) => {
+		const person = data.registeredUsers.find((x) => x.assignedSlot === slot);
+		return {
+			slot,
+			slotLabel: slotLabel(slot),
+			name: person?.name ?? '',
+			assignedAt: person?.assignedAt ?? null,
+			assignedBy: person?.assignedBy ?? null
+		};
+	});
+}
+
+export function adminDebugState() {
+	return {
+		loggedIn: data.loggedIn,
+		isAdminSession: data.isAdminSession,
+		currentUserName: data.currentUserName,
+		registeredUsers: data.registeredUsers.map((x) => ({
+			id: x.id,
+			name: x.name,
+			isAdmin: x.isAdmin,
+			assignedSlot: x.assignedSlot,
+			assignedAt: x.assignedAt,
+			assignedBy: x.assignedBy,
+			joinedAt: x.joinedAt,
+			lastSeenAt: x.lastSeenAt
+		}))
+	};
+}
+
+export async function hydrateAppStateFromServer() {
+	if (!browser) return;
+	try {
+		const res = await fetch(APP_STATE_API_PATH);
+		if (!res.ok) return;
+		const payload = (await res.json()) as { snapshot?: Partial<Snapshot> };
+		if (!payload.snapshot) return;
+		lastServerSnapshotJson = JSON.stringify(payload.snapshot);
+		applySnapshotPatch(payload.snapshot, true);
+		debugLog('hydrated_from_server', { registeredCount: data.registeredUsers.length });
+	} catch (err) {
+		debugLog('hydrate_failed', err);
+	}
+}
+
+export async function persistAppStateToServer() {
+	if (!browser) return;
+	try {
+		const snapshot = createSnapshotFromData();
+		const nextJson = JSON.stringify(snapshot);
+		if (nextJson === lastServerSnapshotJson) return;
+		const res = await fetch(APP_STATE_API_PATH, {
+			method: 'PUT',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ snapshot })
+		});
+		if (!res.ok) {
+			debugLog('persist_failed_status', res.status);
+			return;
+		}
+		lastServerSnapshotJson = nextJson;
+	} catch (err) {
+		debugLog('persist_failed', err);
+	}
 }
 
 export function confirmStartProject() {
@@ -250,6 +591,7 @@ export function confirmStartProject() {
 	data.phase = 'project_completion';
 	data.reviewerAssignmentAccepted = { jane: false, joe: true };
 	pushToast('Project started — complete the brief, then submit for review.');
+	void persistAppStateToServer();
 }
 
 export function acceptReviewerAssignment(reviewer: 'jane' | 'joe') {
@@ -267,7 +609,13 @@ export function reviewerNeedsAssignmentGate(role: Role): boolean {
 export function confirmSubmitForReview() {
 	data.submittedForReview = true;
 	data.phase = 'testing';
-	pushToast('Reviewers assigned: You & Joe. Testing phase unlocked.');
+	data.latestSubmission = {
+		by: data.currentUserName || 'Submitter',
+		at: new Date().toISOString(),
+		repo: MESSENGER_REPO
+	};
+	pushToast('Reviewers assigned: Jane & Joe. Testing phase unlocked.');
+	void persistAppStateToServer();
 }
 
 export function setTestingVerdict(itemId: string, reviewer: 'jane' | 'joe', verdict: TestingDecision) {
@@ -657,6 +1005,10 @@ export function canRevisitPhaseInProgress(stepPhase: Phase, currentPhase: Phase)
 
 export function resetPrototype() {
 	const fresh = createInitialSnapshot();
+	data.loggedIn = fresh.loggedIn;
+	data.isAdminSession = fresh.isAdminSession;
+	data.currentUserName = fresh.currentUserName;
+	data.registeredUsers = fresh.registeredUsers;
 	data.role = fresh.role;
 	data.phase = fresh.phase;
 	data.projectStarted = fresh.projectStarted;
@@ -674,7 +1026,6 @@ export function resetPrototype() {
 	data.reviewerRatings = fresh.reviewerRatings;
 	data.xpMock = fresh.xpMock;
 	data.leaderboardNote = fresh.leaderboardNote;
-	if (browser) localStorage.removeItem(APP_STATE_STORAGE_KEY);
 	pushToast('Prototype reset to defaults.');
 }
 

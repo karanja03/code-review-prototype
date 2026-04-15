@@ -1,4 +1,5 @@
 export type Role = 'sandra' | 'jane' | 'joe';
+export type AdminSlot = 'submitter' | 'reviewer1' | 'reviewer2';
 
 export type Phase =
 	| 'briefing'
@@ -96,4 +97,15 @@ export interface ReviewerRatingSet {
 	readableCode: { score: number | null; comment: string; submitted: boolean };
 	codeComments: { score: number | null; comment: string; submitted: boolean };
 	crossReviewer: { score: number | null; comment: string; submitted: boolean };
+}
+
+export interface RegisteredUser {
+	id: string;
+	name: string;
+	joinedAt: string;
+	lastSeenAt: string;
+	assignedSlot: AdminSlot | null;
+	assignedAt: string | null;
+	assignedBy: string | null;
+	isAdmin: boolean;
 }

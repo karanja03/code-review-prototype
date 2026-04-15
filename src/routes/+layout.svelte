@@ -1,18 +1,36 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
-	import { APP_STATE_STORAGE_KEY, getApp } from '$lib/appState.svelte';
+	import { onMount } from 'svelte';
+	import { getApp, hydrateAppStateFromServer, persistAppStateToServer } from '$lib/appState.svelte';
 	import './layout.css';
 	import favicon from '$lib/assets/favicon.svg';
 
 	let { children } = $props();
 
 	const app = getApp();
+	let hasHydratedFromServer = false;
+	let saveTimer: ReturnType<typeof setTimeout> | null = null;
 
-	// `$effect` cannot live at module scope in `.svelte.ts`; persist here during component init.
+	onMount(() => {
+		let pollTimer: ReturnType<typeof setInterval> | null = null;
+		const boot = async () => {
+			await hydrateAppStateFromServer();
+			hasHydratedFromServer = true;
+			pollTimer = setInterval(() => {
+				void hydrateAppStateFromServer();
+			}, 1400);
+		};
+		void boot();
+		return () => {
+			if (pollTimer) clearInterval(pollTimer);
+		};
+	});
+
+	// Persist updates to the JSON file with lightweight debounce.
 	$effect(() => {
-		if (!browser) return;
+		if (!browser || !hasHydratedFromServer) return;
 		const snap = {
-			role: app.role,
+			registeredUsers: app.registeredUsers,
 			phase: app.phase,
 			projectStarted: app.projectStarted,
 			submittedForReview: app.submittedForReview,
@@ -30,7 +48,14 @@
 			leaderboardNote: app.leaderboardNote,
 			reviewerAssignmentAccepted: app.reviewerAssignmentAccepted
 		};
-		localStorage.setItem(APP_STATE_STORAGE_KEY, JSON.stringify(snap));
+		void snap;
+		if (saveTimer) clearTimeout(saveTimer);
+		saveTimer = setTimeout(() => {
+			void persistAppStateToServer();
+		}, 220);
+		return () => {
+			if (saveTimer) clearTimeout(saveTimer);
+		};
 	});
 </script>
 
