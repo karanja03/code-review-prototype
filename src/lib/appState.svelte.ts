@@ -253,6 +253,44 @@ const data = $state(load());
 /** When set, overrides static `CATEGORIES[].assignee` for paired review rooms. */
 let categoryAssigneeOverride = $state<Record<string, 'jane' | 'joe'> | null>(null);
 
+/** When set (live paired review), UI shows real usernames instead of Sandra / You / Joe. */
+let workspaceDisplayNames = $state<{
+	sandra: string;
+	jane: string;
+	joe: string;
+} | null>(null);
+
+export function setWorkspaceDisplayNames(
+	next: { sandra: string; jane: string; joe: string } | null
+) {
+	workspaceDisplayNames = next;
+}
+
+export function getPersonaDisplayLabel(persona: 'sandra' | 'jane' | 'joe'): string {
+	const m = workspaceDisplayNames;
+	if (m) return m[persona];
+	if (persona === 'jane') return 'You';
+	if (persona === 'joe') return 'Joe';
+	return 'Sandra';
+}
+
+/** Server has paired reviewers on an active project — skip prototype briefing / assignment gates. */
+export function syncLiveReviewWorkspaceFromServer(workspace: {
+	kind: string;
+	project: { status: string } | null;
+	pair: { projectId: string } | null;
+}) {
+	if (workspace.kind !== 'submitter' && workspace.kind !== 'reviewer') return;
+	if (!workspace.pair || !workspace.project) return;
+	if (workspace.project.status !== 'review_active') return;
+	data.projectStarted = true;
+	data.submittedForReview = true;
+	data.reviewerAssignmentAccepted = { jane: true, joe: true };
+	if (data.phase === 'briefing' || data.phase === 'project_completion') {
+		data.phase = 'testing';
+	}
+}
+
 const toasts = $state<Toast[]>([]);
 
 export function getApp() {
@@ -285,11 +323,12 @@ export function confirmStartProject() {
 
 export function acceptReviewerAssignment(reviewer: 'jane' | 'joe') {
 	data.reviewerAssignmentAccepted[reviewer] = true;
-	pushToast(`${reviewer === 'jane' ? 'You' : 'Joe'}: assignment accepted — you can review.`);
+	pushToast(`${getPersonaDisplayLabel(reviewer)}: assignment accepted — you can review.`);
 }
 
 export function reviewerNeedsAssignmentGate(role: Role): boolean {
 	if (role !== 'jane' && role !== 'joe') return false;
+	if (data.reviewerAssignmentAccepted.jane && data.reviewerAssignmentAccepted.joe) return false;
 	if (!data.projectStarted) return false;
 	return !data.reviewerAssignmentAccepted[role];
 }
@@ -297,7 +336,9 @@ export function reviewerNeedsAssignmentGate(role: Role): boolean {
 export function confirmSubmitForReview() {
 	data.submittedForReview = true;
 	data.phase = 'testing';
-	pushToast('Reviewers assigned: You & Joe. Testing phase unlocked.');
+	const a = getPersonaDisplayLabel('jane');
+	const b = getPersonaDisplayLabel('joe');
+	pushToast(`Reviewers assigned: ${a} & ${b}. Testing phase unlocked.`);
 }
 
 export function setTestingVerdict(itemId: string, reviewer: 'jane' | 'joe', verdict: TestingDecision) {
@@ -379,7 +420,9 @@ export function sandraStartNewTestingRound() {
 		item.joe = 'pending';
 	}
 	data.testingRound += 1;
-	pushToast(`Round ${data.testingRound} started — You & Joe verdicts reset; history kept.`);
+	pushToast(
+		`Round ${data.testingRound} started — ${getPersonaDisplayLabel('jane')} & ${getPersonaDisplayLabel('joe')} verdicts reset; history kept.`
+	);
 }
 
 export function mandatoryItems() {
@@ -438,7 +481,9 @@ export function mandatoryProgressForReviewer(reviewer: 'jane' | 'joe'): {
 
 export function goToCodeReview() {
 	if (!allMandatoryDoubleAccepted()) {
-		pushToast('Each mandatory check must be Accepted by its assigned reviewer (You or Joe).');
+		pushToast(
+			`Each mandatory check must be Accepted by its assigned reviewer (${getPersonaDisplayLabel('jane')} or ${getPersonaDisplayLabel('joe')}).`
+		);
 		return;
 	}
 	data.phase = 'code_review';

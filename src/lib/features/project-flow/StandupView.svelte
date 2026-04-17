@@ -1,15 +1,19 @@
 <script lang="ts">
-	import { completeStandup, getApp, toggleStandup } from '$lib/appState.svelte';
+	import { completeStandup, getApp, getPersonaDisplayLabel, toggleStandup } from '$lib/appState.svelte';
 
 	const app = getApp();
 
-	const agenda = [
+	const janeName = $derived(getPersonaDisplayLabel('jane'));
+	const joeName = $derived(getPersonaDisplayLabel('joe'));
+	const sandraName = $derived(getPersonaDisplayLabel('sandra'));
+
+	const agenda = $derived([
 		'Scheduled the ~45 min sync and shared time / voice channel with the team.',
-		'Followed the structure: Your categories → Joe’s → cross-review → Sandra → shared actions.',
+		`Followed the structure: ${janeName}’s categories → ${joeName}’s → cross-review → ${sandraName} → shared actions.`,
 		'Captured takeaways below (what was discussed, key feedback, action items, reflections).',
 		'Confirmed everyone had space to speak; notes are specific enough to use later.',
 		'Agreed what “done” means for this review before moving to Accept project.'
-	];
+	]);
 
 	const maxTakeaways = 1000;
 </script>
@@ -66,7 +70,7 @@
 				areas (concrete examples).
 			</li>
 			<li>
-				<strong class="text-kood-text">Sandra</strong> — Submitter perspective: what changed, what is still risky,
+				<strong class="text-kood-text">{sandraName}</strong> — Submitter perspective: what changed, what is still risky,
 				what you need from reviewers before sign-off.
 			</li>
 			<li>

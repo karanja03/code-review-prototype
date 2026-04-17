@@ -3,6 +3,7 @@
 		codeReviewReviewerCommentCount,
 		getApp,
 		getCodeReviewObservationRow,
+		getPersonaDisplayLabel,
 		postCodeReviewComment,
 		setCodeReviewDraft,
 		setCodeReviewVerdict
@@ -37,6 +38,9 @@
 	const n = $derived(codeReviewReviewerCommentCount(entry.categoryId, entry.observationId));
 	const canSetVerdict = $derived(isReviewer && self && owner === self);
 	const idSafe = $derived(entry.compositeId.replace(/:/g, '-'));
+	const threadPeopleLabel = $derived(
+		`${getPersonaDisplayLabel('jane')} & ${getPersonaDisplayLabel('joe')}`
+	);
 </script>
 
 <div
@@ -62,7 +66,7 @@
 		{#if isSandra || isReviewer}
 			<div
 				class="shrink-0 self-start rounded px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-kood-muted ring-1 ring-kood-border"
-				title="Notes from You & Joe"
+				title={`Notes from ${threadPeopleLabel}`}
 			>
 				{n}
 			</div>

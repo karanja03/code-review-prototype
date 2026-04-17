@@ -6,8 +6,21 @@
 
 	type CatMap = Record<string, 'jane' | 'joe'> | null;
 
+	type ReviewRoom = {
+		submitterUsername: string;
+		reviewerAUsername: string;
+		reviewerBUsername: string;
+	};
+
 	type Workspace =
-		| { kind: 'submitter'; viewerId: string; project: Proj; pair: RP | null; categoryMap?: CatMap }
+		| {
+				kind: 'submitter';
+				viewerId: string;
+				project: Proj;
+				pair: RP | null;
+				categoryMap?: CatMap;
+				reviewRoom: ReviewRoom | null;
+		  }
 		| {
 				kind: 'reviewer';
 				viewerId: string;
@@ -15,6 +28,7 @@
 				pair: RP | null;
 				categoryMap?: CatMap;
 				persona?: 'sandra' | 'jane' | 'joe' | null;
+				reviewRoom: ReviewRoom | null;
 		  }
 		| { kind: 'other'; viewerId: string; role: string };
 
@@ -57,8 +71,12 @@
 		{/if}
 		{#if submitter.pair}
 			<p class="mt-3 text-xs text-kood-muted">
-				Two reviewers are assigned — use <strong class="text-kood-text/90">Server sync</strong> below to save Testing and
-				Code review progress for everyone on this batch.
+				Reviewers:
+				<strong class="text-kood-text/90">{submitter.reviewRoom?.reviewerAUsername ?? 'Reviewer A'}</strong>
+				&amp;
+				<strong class="text-kood-text/90">{submitter.reviewRoom?.reviewerBUsername ?? 'Reviewer B'}</strong>
+				— use <strong class="text-kood-text/90">Server sync</strong> below to save Testing and Code review progress for
+				everyone on this batch.
 			</p>
 		{:else if submitter.project.status === 'repo_submitted'}
 			<p class="mt-3 text-xs text-kood-muted">

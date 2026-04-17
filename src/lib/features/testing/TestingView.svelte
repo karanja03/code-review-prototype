@@ -3,6 +3,7 @@
 	import {
 		allMandatoryDoubleAccepted,
 		getApp,
+		getPersonaDisplayLabel,
 		goToCodeReview,
 		mandatoryItems,
 		mandatoryOwnedResolvedCount,
@@ -59,20 +60,21 @@
 	const janeProg = $derived(mandatoryProgressForReviewer('jane'));
 	const joeProg = $derived(mandatoryProgressForReviewer('joe'));
 
-	const tabJaneBucketLabel = $derived(app.role === 'jane' ? 'Your checks' : 'Reviewer 1');
-	const tabJoeBucketLabel = $derived(app.role === 'joe' ? 'Your checks' : 'Joe’s checks');
+	const jName = $derived(getPersonaDisplayLabel('jane'));
+	const oName = $derived(getPersonaDisplayLabel('joe'));
+
+	const tabJaneBucketLabel = $derived(app.role === 'jane' ? 'Your checks' : jName);
+	const tabJoeBucketLabel = $derived(app.role === 'joe' ? 'Your checks' : oName);
 	const mandatorySplitBlurb = $derived(
 		app.role === 'jane'
-			? `first ${janeProg.owned} yours · ${joeProg.owned} Joe’s`
+			? `first ${janeProg.owned} yours · ${joeProg.owned} for ${oName}`
 			: app.role === 'joe'
-				? `${janeProg.owned} for reviewer 1 · ${joeProg.owned} yours`
-				: `${janeProg.owned} for reviewer 1 · ${joeProg.owned} for Joe`
+				? `${janeProg.owned} for ${jName} · ${joeProg.owned} yours`
+				: `${janeProg.owned} for ${jName} · ${joeProg.owned} for ${oName}`
 	);
 
-	const janeBucketHeader = $derived(
-		app.role === 'jane' ? 'Your bucket' : app.role === 'joe' ? 'Reviewer 1 bucket' : 'Reviewer 1 bucket'
-	);
-	const joeBucketHeader = $derived(app.role === 'joe' ? 'Your bucket' : 'Joe’s bucket');
+	const janeBucketHeader = $derived(app.role === 'jane' ? 'Your bucket' : `${jName}’s bucket`);
+	const joeBucketHeader = $derived(app.role === 'joe' ? 'Your bucket' : `${oName}’s bucket`);
 
 	const janeAcceptPct = $derived(
 		janeProg.owned === 0 ? 0 : (janeProg.accepted / janeProg.owned) * 100
@@ -140,8 +142,8 @@
 	<header>
 		<h2 class="text-2xl font-semibold text-kood-text">Testing</h2>
 		<p class="mt-3 text-sm leading-relaxed text-kood-muted">
-			Mandatory checks are <strong class="text-kood-text/90">split between you and Joe</strong> — each row has one
-			owner who Accepts/Declines; the other reviewer reads along and can comment. Progress below always reflects the
+			Mandatory checks are <strong class="text-kood-text/90">split between {jName} and {oName}</strong> — each row has
+			one owner who Accepts/Declines; the other reviewer reads along and can comment. Progress below always reflects the
 			<strong class="text-kood-text/90">full</strong> mandatory list.
 		</p>
 	</header>
@@ -274,12 +276,12 @@
 		>
 			{#if app.role === 'jane'}
 				<strong class="text-kood-text">You:</strong> Accept/Decline only on rows marked for you. Use the other tab (<strong
-					class="text-kood-text/90">{tabJoeBucketLabel}</strong>) to see Joe’s scope (read-only verdicts; you can still
-				comment).
+					class="text-kood-text/90">{tabJoeBucketLabel}</strong>) to see {oName}’s scope (read-only verdicts; you can
+				still comment).
 			{:else}
 				<strong class="text-kood-text">You:</strong> Accept/Decline only on rows in <strong class="text-kood-text/90"
 					>{tabJoeBucketLabel}</strong
-				>. Use <strong class="text-kood-text/90">{tabJaneBucketLabel}</strong> to read your peer’s scope (read-only
+				>. Use <strong class="text-kood-text/90">{tabJaneBucketLabel}</strong> to read {jName}’s scope (read-only
 				verdicts; you can still comment).
 			{/if}
 		</div>
@@ -397,8 +399,8 @@
 		>
 		{#if !allMandatoryDoubleAccepted()}
 			<p class="text-xs text-amber-400/90">
-				Every mandatory row must be <strong class="text-amber-200">Accepted by its owner</strong> (you or Joe). Use
-				tabs and pages so nothing is missed.
+				Every mandatory row must be <strong class="text-amber-200">Accepted by its owner</strong> ({jName} or {oName}).
+				Use tabs and pages so nothing is missed.
 			</p>
 		{/if}
 	</div>

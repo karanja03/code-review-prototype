@@ -1,8 +1,12 @@
 <script lang="ts">
-	import { allCategoriesComplete, trainingBlurbFor } from '$lib/appState.svelte';
+	import { allCategoriesComplete, getPersonaDisplayLabel, trainingBlurbFor } from '$lib/appState.svelte';
 	import Accordion from '$lib/ui/Accordion.svelte';
 	import CodeReview7Day from './CodeReview7Day.svelte';
 	import CodeReviewSprintBoard from './CodeReviewSprintBoard.svelte';
+
+	const jName = $derived(getPersonaDisplayLabel('jane'));
+	const oName = $derived(getPersonaDisplayLabel('joe'));
+	const sandraName = $derived(getPersonaDisplayLabel('sandra'));
 </script>
 
 <div class="space-y-6">
@@ -39,8 +43,8 @@
 			</li>
 			<li>
 				<strong class="text-kood-text/90">Prepare</strong> individually before the call. Align on who already
-				looked at which parts of the repo (here: you → Security &amp; Correctness, Joe → Performance &amp; Structure
-				&amp; architecture).
+				looked at which parts of the repo (here: {jName} → Security &amp; Correctness, {oName} → Performance &amp;
+				Structure &amp; architecture).
 			</li>
 			<li>
 				<strong class="text-kood-text/90">During the session</strong> take notes. Anyone can facilitate; capture
@@ -55,15 +59,15 @@
 		</p>
 		<ol class="mt-4 list-decimal space-y-4 pl-5 text-sm text-kood-text/90">
 			<li>
-				<strong class="text-kood-text">You — assigned categories</strong>
+				<strong class="text-kood-text">{jName} — assigned categories</strong>
 				<span class="text-kood-muted"> (Security, Correctness)</span>
 				<p class="mt-1 text-kood-muted">
-					Walk through main findings, feedback sent to Sandra, and what changed since. Peers ask clarifying questions
-					only — you own the narrative for your scope.
+					Walk through main findings, feedback sent to {sandraName}, and what changed since. Peers ask clarifying
+					questions only — you own the narrative for your scope.
 				</p>
 			</li>
 			<li>
-				<strong class="text-kood-text">Joe — assigned categories</strong>
+				<strong class="text-kood-text">{oName} — assigned categories</strong>
 				<span class="text-kood-muted"> (Performance, Structure &amp; architecture)</span>
 				<p class="mt-1 text-kood-muted">
 					Same pattern: outcomes, trade-offs, anything still fuzzy. Keep cross-talk light until step 3.
@@ -77,7 +81,7 @@
 				</p>
 			</li>
 			<li>
-				<strong class="text-kood-text">Sandra (submitter)</strong>
+				<strong class="text-kood-text">{sandraName} (submitter)</strong>
 				<p class="mt-1 text-kood-muted">
 					How you responded to feedback, what was hard to fix, and what you would still like reviewers to sanity-check.
 					Agree on any remaining risk or follow-up demos.
@@ -95,7 +99,7 @@
 
 	<div class="rounded-lg border border-kood-border bg-kood-bg/50 px-4 py-3 text-xs text-kood-muted">
 		<strong class="text-kood-text/90">Async vs live:</strong> The sprint board below matches the Testing flow
-		(Accept/Decline, threads, Your checks vs Joe’s tabs). The structured call lives in
+		(Accept/Decline, threads, {jName} vs {oName} tabs). The structured call lives in
 		<strong class="text-kood-text/90">Standup (post-sprint)</strong> once every observation is accepted.
 	</div>
 
@@ -111,7 +115,9 @@
 	<CodeReview7Day />
 
 	<details class="rounded-xl border border-kood-border bg-kood-surface p-4 text-sm text-kood-muted">
-		<summary class="cursor-pointer text-kood-text/90">Reviewer training hints (from Sandra's future ratings)</summary>
+		<summary class="cursor-pointer text-kood-text/90">
+			Reviewer training hints (from {sandraName}'s future ratings)
+		</summary>
 		<p class="mt-2">{trainingBlurbFor('jane')}</p>
 		<p class="mt-1">{trainingBlurbFor('joe')}</p>
 	</details>

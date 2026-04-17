@@ -1,3 +1,4 @@
+import { getPersonaDisplayLabel } from '$lib/appState.svelte';
 import type { TestingComment, TestingDecision } from '$lib/types';
 
 export function verdictChipClass(d: TestingDecision) {
@@ -25,11 +26,8 @@ export function formatShortTimestamp(iso: string) {
 	}
 }
 
-/** Jane’s reviewer seat is framed as the prototype user (“You”). */
 export function reviewerDisplayName(author: 'jane' | 'joe' | 'sandra'): string {
-	if (author === 'jane') return 'You';
-	if (author === 'joe') return 'Joe';
-	return 'Sandra';
+	return getPersonaDisplayLabel(author);
 }
 
 export function commentAuthorLabel(a: TestingComment['author']) {
@@ -41,5 +39,7 @@ export function formatVerdictHistoryLine(h: {
 	jane: TestingDecision;
 	joe: TestingDecision;
 }): string {
-	return `R${h.round}: You ${h.jane} · Joe ${h.joe}`;
+	const j = getPersonaDisplayLabel('jane');
+	const o = getPersonaDisplayLabel('joe');
+	return `R${h.round}: ${j} ${h.jane} · ${o} ${h.joe}`;
 }

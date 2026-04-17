@@ -1,14 +1,14 @@
 <script lang="ts">
-	import { getApp, setRole } from '$lib/appState.svelte';
+	import { getApp, getPersonaDisplayLabel, setRole } from '$lib/appState.svelte';
 	import type { Role } from '$lib/types';
 
 	const app = getApp();
 
-	const roles: { id: Role; label: string }[] = [
-		{ id: 'sandra', label: 'Sandra (submitter)' },
-		{ id: 'jane', label: 'You (reviewer)' },
-		{ id: 'joe', label: 'Joe (reviewer)' }
-	];
+	const roles = $derived<{ id: Role; label: string }[]>([
+		{ id: 'sandra', label: `${getPersonaDisplayLabel('sandra')} (submitter)` },
+		{ id: 'jane', label: `${getPersonaDisplayLabel('jane')} (reviewer)` },
+		{ id: 'joe', label: `${getPersonaDisplayLabel('joe')} (reviewer)` }
+	]);
 </script>
 
 <div class="flex flex-wrap gap-2">

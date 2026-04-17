@@ -1,6 +1,7 @@
 <script lang="ts">
 	import {
 		getApp,
+		getPersonaDisplayLabel,
 		postTestingComment,
 		reviewerCommentCount,
 		setTestingDraft,
@@ -31,6 +32,9 @@
 	const isSandra = $derived(app.role === 'sandra');
 	const self = $derived(app.role === 'jane' || app.role === 'joe' ? app.role : null);
 	const peer = $derived(self === 'jane' ? 'joe' : self === 'joe' ? 'jane' : null);
+	const threadPeopleLabel = $derived(
+		`${getPersonaDisplayLabel('jane')} & ${getPersonaDisplayLabel('joe')}`
+	);
 	const owner = $derived(item.mandatoryOwner ?? null);
 	const flagged = $derived(
 		item.section === 'mandatory' && owner
@@ -66,7 +70,7 @@
 		{#if isSandra || isReviewer}
 			<div
 				class="shrink-0 self-start rounded px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-kood-muted ring-1 ring-kood-border"
-				title="Notes from You & Joe"
+				title={`Notes from ${threadPeopleLabel}`}
 			>
 				{n}
 			</div>
@@ -115,7 +119,7 @@
 			{#if item.joe === 'accept' || item.joe === 'decline'}
 				{#if !(isReviewer && self === 'joe' && canSetVerdict)}
 					<span class="rounded px-2 py-0.5 ring-1 {verdictChipClass(item.joe)}"
-						>Joe · {verdictLabel(item.joe)}</span
+						>{getPersonaDisplayLabel('joe')} · {verdictLabel(item.joe)}</span
 					>
 				{/if}
 			{/if}

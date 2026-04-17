@@ -1,12 +1,19 @@
 <script lang="ts">
 	import { ACADEMY_BASE, CATEGORIES } from '$lib/constants';
-	import { academyUrl, acceptReviewerAssignment, categoryAssignee, getApp } from '$lib/appState.svelte';
+	import {
+		academyUrl,
+		acceptReviewerAssignment,
+		categoryAssignee,
+		getApp,
+		getPersonaDisplayLabel
+	} from '$lib/appState.svelte';
 
 	const app = getApp();
 
 	const role = $derived(app.role === 'jane' || app.role === 'joe' ? app.role : 'jane');
-	const displayName = $derived(role === 'jane' ? 'You' : 'Joe');
-	const peerName = $derived(role === 'jane' ? 'Joe' : 'Reviewer 1');
+	const displayName = $derived(getPersonaDisplayLabel(role));
+	const peerName = $derived(role === 'jane' ? getPersonaDisplayLabel('joe') : getPersonaDisplayLabel('jane'));
+	const submitterName = $derived(getPersonaDisplayLabel('sandra'));
 
 	const myCategories = $derived(CATEGORIES.filter((c) => categoryAssignee(c.id) === role));
 
@@ -37,8 +44,8 @@
 					{displayName}, you’ve been assigned to review this project
 				</h2>
 				<p class="mt-2 text-sm text-kood-muted">
-					The submitter started the journey. Below are <strong class="text-kood-text/90">your</strong> categories
-					and how to show up for them. {peerName} has a parallel assignment — you’ll each drive different boards
+					{submitterName} is the submitter on this batch. Below are <strong class="text-kood-text/90">your</strong>
+					categories and how to show up for them. {peerName} has a parallel assignment — you’ll each drive different boards
 					during the code review sprint.
 				</p>
 			</header>
@@ -77,8 +84,9 @@
 			<section class="rounded-xl border border-kood-accent/20 bg-kood-accent/5 p-4">
 				<h3 class="text-sm font-semibold text-kood-text">“This is a review, not a roast” 🍞</h3>
 				<p class="mt-2 text-sm leading-relaxed text-kood-muted">
-					We’re here for <strong class="text-kood-text/90">depth</strong>, not dunking. Assume Sandra already tried
-					hard; your job is to make the next version safer and clearer—without making a human regret opening the repo.
+					We’re here for <strong class="text-kood-text/90">depth</strong>, not dunking. Assume {submitterName} already
+					tried hard; your job is to make the next version safer and clearer—without making a human regret opening the
+					repo.
 				</p>
 				<ul class="mt-3 list-none space-y-2 text-sm text-kood-text/90">
 					<li class="flex gap-2">
@@ -135,10 +143,10 @@
 			</section>
 
 			<section class="rounded-lg border border-kood-border/80 bg-kood-surface-raised/40 p-4 text-sm text-kood-muted">
-				<h3 class="text-sm font-semibold text-kood-text">Submitter (Sandra) — different hat 🎩</h3>
+				<h3 class="text-sm font-semibold text-kood-text">Submitter ({submitterName}) — different hat 🎩</h3>
 				<p class="mt-2">
-					Sandra ships fixes, answers threads, and may start new testing rounds. She doesn’t score your categories—you
-					do. In standup, she connects “what changed” with “what still worries me.”
+					{submitterName} ships fixes, answers threads, and may start new testing rounds. They don’t score your
+					categories—you do. In standup, they connect “what changed” with “what still worries me.”
 				</p>
 			</section>
 

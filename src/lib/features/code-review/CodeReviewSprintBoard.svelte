@@ -10,6 +10,7 @@
 		codeReviewOwnedResolvedCount,
 		codeReviewProgressForReviewer,
 		getApp,
+		getPersonaDisplayLabel,
 		goToStandup,
 		sandraStartNewCodeReviewRound
 	} from '$lib/appState.svelte';
@@ -62,23 +63,25 @@
 	const janeProg = $derived(codeReviewProgressForReviewer('jane'));
 	const joeProg = $derived(codeReviewProgressForReviewer('joe'));
 
+	const jName = $derived(getPersonaDisplayLabel('jane'));
+	const oName = $derived(getPersonaDisplayLabel('joe'));
+	const sandraName = $derived(getPersonaDisplayLabel('sandra'));
+
 	const janeCategoryCount = $derived(CATEGORIES.filter((c) => categoryAssignee(c.id) === 'jane').length);
 	const joeCategoryCount = $derived(CATEGORIES.filter((c) => categoryAssignee(c.id) === 'joe').length);
 
-	const tabJaneBucketLabel = $derived(app.role === 'jane' ? 'Your checks' : 'Reviewer 1');
-	const tabJoeBucketLabel = $derived(app.role === 'joe' ? 'Your checks' : 'Joe’s checks');
+	const tabJaneBucketLabel = $derived(app.role === 'jane' ? 'Your checks' : jName);
+	const tabJoeBucketLabel = $derived(app.role === 'joe' ? 'Your checks' : oName);
 	const codeReviewCategoryBlurb = $derived(
 		app.role === 'jane'
-			? `You ${janeCategoryCount} categories · Joe ${joeCategoryCount} categories`
+			? `You ${janeCategoryCount} categories · ${oName} ${joeCategoryCount} categories`
 			: app.role === 'joe'
-				? `Reviewer 1: ${janeCategoryCount} · You ${joeCategoryCount} categories`
-				: `Reviewer 1: ${janeCategoryCount} · Joe: ${joeCategoryCount}`
+				? `${jName}: ${janeCategoryCount} · You ${joeCategoryCount} categories`
+				: `${jName}: ${janeCategoryCount} · ${oName}: ${joeCategoryCount}`
 	);
 
-	const janeBucketHeader = $derived(
-		app.role === 'jane' ? 'Your bucket' : app.role === 'joe' ? 'Reviewer 1 bucket' : 'Reviewer 1 bucket'
-	);
-	const joeBucketHeader = $derived(app.role === 'joe' ? 'Your bucket' : 'Joe’s bucket');
+	const janeBucketHeader = $derived(app.role === 'jane' ? 'Your bucket' : `${jName}’s bucket`);
+	const joeBucketHeader = $derived(app.role === 'joe' ? 'Your bucket' : `${oName}’s bucket`);
 
 	const janeAcceptPct = $derived(
 		janeProg.owned === 0 ? 0 : (janeProg.accepted / janeProg.owned) * 100
@@ -132,13 +135,13 @@
 		<h2 class="text-xl font-semibold text-kood-text">Sprint · category observations</h2>
 		<p class="mt-1 text-sm text-kood-muted">
 			{#if app.role === 'joe'}
-				You own Performance and Structure &amp; architecture; the other reviewer owns Security and Correctness. Only the
-				assignee Accepts/Declines; the peer reads along and can use the thread.
+				You own Performance and Structure &amp; architecture; {jName} owns Security and Correctness. Only the assignee
+				Accepts/Declines; the peer reads along and can use the thread.
 			{:else if app.role === 'sandra'}
-				Reviewer 1 (You) owns Security and Correctness; Joe owns Performance and Structure &amp; architecture. Only the
-				assignee Accepts/Declines; the peer reads along and can use the thread.
+				{sandraName} (submitter) follows both boards read-only. {jName} owns Security and Correctness; {oName} owns
+				Performance and Structure &amp; architecture. Only each assignee Accepts/Declines on their rows.
 			{:else}
-				You own Security and Correctness; Joe owns Performance and Structure &amp; architecture. Only the assignee
+				You own Security and Correctness; {oName} owns Performance and Structure &amp; architecture. Only the assignee
 				Accepts/Declines; the peer reads along and can use the thread.
 			{/if}
 		</p>
@@ -253,12 +256,12 @@
 		>
 			{#if app.role === 'jane'}
 				<strong class="text-kood-text">You:</strong> Accept/Decline only on rows in your tab. Use <strong
-					class="text-kood-text/90">{tabJoeBucketLabel}</strong> to see Joe’s scope (read-only verdicts; you can still
+					class="text-kood-text/90">{tabJoeBucketLabel}</strong> to see {oName}’s scope (read-only verdicts; you can still
 				comment).
 			{:else}
 				<strong class="text-kood-text">You:</strong> Accept/Decline only on rows in <strong class="text-kood-text/90"
 					>{tabJoeBucketLabel}</strong
-				>. Use <strong class="text-kood-text/90">{tabJaneBucketLabel}</strong> to read your peer’s scope (read-only
+				>. Use <strong class="text-kood-text/90">{tabJaneBucketLabel}</strong> to read {jName}’s scope (read-only
 				verdicts; you can still comment).
 			{/if}
 		</div>
@@ -361,10 +364,10 @@
 								{categoryAssignee(currentGroup.category.id) === 'jane'
 									? app.role === 'jane'
 										? 'You'
-										: 'Reviewer 1'
+										: jName
 									: app.role === 'joe'
 										? 'You'
-										: 'Reviewer 2'}
+										: oName}
 							</strong>
 						</p>
 					</div>
@@ -416,8 +419,8 @@
 
 	{#if !allCategoriesComplete()}
 		<p class="text-xs text-amber-400/90">
-			Every observation must be <strong class="text-amber-200">Accepted by its assignee</strong> (you or Joe). Use
-			tabs and category pages so nothing is missed.
+			Every observation must be <strong class="text-amber-200">Accepted by its assignee</strong> ({jName} or {oName}).
+			Use tabs and category pages so nothing is missed.
 		</p>
 	{/if}
 </div>

@@ -134,6 +134,24 @@ export function userPublicRow(userId: string) {
 	return rows[0] ?? null;
 }
 
+/** Reviewer A ↔ prototype “jane”; reviewer B ↔ “joe”; submitter ↔ “sandra”. */
+export type ReviewRoomLabels = {
+	submitterUsername: string;
+	reviewerAUsername: string;
+	reviewerBUsername: string;
+};
+
+export function reviewRoomDisplayLabels(submitterId: string, pair: ReviewPairRow): ReviewRoomLabels {
+	const sub = userPublicRow(submitterId);
+	const a = userPublicRow(pair.reviewerAId);
+	const b = userPublicRow(pair.reviewerBId);
+	return {
+		submitterUsername: sub?.username ?? 'Submitter',
+		reviewerAUsername: a?.username ?? 'Reviewer A',
+		reviewerBUsername: b?.username ?? 'Reviewer B'
+	};
+}
+
 export function listUsersForAdmin() {
 	return getDb()
 		.select({ id: user.id, username: user.username, email: user.email, role: user.role })

@@ -18,6 +18,7 @@ import {
 	markProjectCompleted,
 	parseCodeReviewSavePayload,
 	reviewPersonaForUser,
+	reviewRoomDisplayLabels,
 	saveProjectReviewWorkspace,
 	startNextProjectBatch,
 	submitProjectRepoUrl
@@ -37,6 +38,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 		const pair = getPairForProject(projectRow.id);
 		const categoryMap = pair ? categoryAssigneeMapFromPair(pair) : null;
 		const canMarkComplete = projectRow.submitterId === u.id;
+		const reviewRoom = pair ? reviewRoomDisplayLabels(projectRow.submitterId, pair) : null;
 		return {
 			workspace: {
 				kind: 'submitter' as const,
@@ -44,6 +46,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 				project: projectRow,
 				pair,
 				categoryMap,
+				reviewRoom,
 				canMarkComplete
 			}
 		};
@@ -58,6 +61,8 @@ export const load: PageServerLoad = async ({ locals }) => {
 		const categoryMap = pair ? categoryAssigneeMapFromPair(pair) : null;
 		const persona =
 			pair && projectRow ? reviewPersonaForUser(pair, u.id, projectRow.submitterId) : null;
+		const reviewRoom =
+			pair && projectRow ? reviewRoomDisplayLabels(projectRow.submitterId, pair) : null;
 		return {
 			workspace: {
 				kind: 'reviewer' as const,
@@ -66,6 +71,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 				pair,
 				categoryMap,
 				persona,
+				reviewRoom,
 				canMarkComplete: false as const
 			}
 		};

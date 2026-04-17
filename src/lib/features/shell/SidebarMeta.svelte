@@ -1,8 +1,11 @@
 <script lang="ts">
-	import { getApp } from '$lib/appState.svelte';
+	import { getApp, getPersonaDisplayLabel } from '$lib/appState.svelte';
 	import { MESSENGER_REPO, PROJECT_MANDATORY_XP } from '$lib/koodUi';
 
 	const app = getApp();
+	const janeLabel = $derived(getPersonaDisplayLabel('jane'));
+	const joeLabel = $derived(getPersonaDisplayLabel('joe'));
+	const reviewerPairHint = $derived(`${janeLabel} & ${joeLabel}`);
 </script>
 
 <div class="space-y-4">
@@ -45,7 +48,7 @@
 					>
 				</li>
 				<li class="flex items-center justify-between gap-2">
-					<span class="text-kood-text/90">Joe</span>
+					<span class="text-kood-text/90">{joeLabel}</span>
 					<span
 						class="rounded-md px-2 py-0.5 text-[11px] font-medium {app.reviewerAssignmentAccepted.joe
 							? 'bg-kood-accent/20 text-kood-accent'
@@ -69,7 +72,7 @@
 	<div class="rounded-xl border border-kood-border bg-kood-surface p-3">
 		<p class="text-xs font-semibold uppercase text-kood-muted">Reviews</p>
 		<p class="mt-1 text-sm text-kood-muted">
-			{app.submittedForReview ? 'You & Joe assigned (demo).' : 'Submit task to see your reviewer(s).'}
+			{app.submittedForReview ? `${reviewerPairHint} assigned.` : 'Submit task to see your reviewer(s).'}
 		</p>
 	</div>
 </div>
