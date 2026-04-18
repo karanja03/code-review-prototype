@@ -3,6 +3,7 @@ import { sql } from 'drizzle-orm';
 import { drizzle, type LibSQLDatabase } from 'drizzle-orm/libsql';
 import { mkdirSync } from 'node:fs';
 import { dirname, isAbsolute, resolve } from 'node:path';
+import { fetch as undiciFetch } from 'undici';
 import { env } from '$env/dynamic/private';
 import * as schema from './schema';
 
@@ -35,11 +36,25 @@ function connectionKey(url: string): string {
 	return `${url}\0${token}`;
 }
 
+function usesRemoteLibsql(url: string): boolean {
+	const u = url.toLowerCase();
+	return (
+		u.startsWith('libsql:') ||
+		u.startsWith('http:') ||
+		u.startsWith('https:') ||
+		u.startsWith('ws:') ||
+		u.startsWith('wss:')
+	);
+}
+
 function createLibsqlClient(url: string): Client {
 	ensureFileDatabaseDirectory(url);
+	// Vercel replaces global `fetch` with a Response whose body often lacks `.cancel()`, which breaks
+	// @libsql/hrana-client error handling (see stream.js `resp.body?.cancel`). Undici matches WHATWG streams.
 	return createClient({
 		url,
-		authToken: env.TURSO_AUTH_TOKEN || undefined
+		authToken: env.TURSO_AUTH_TOKEN || undefined,
+		...(usesRemoteLibsql(url) ? { fetch: undiciFetch as Function } : {})
 	});
 }
 
