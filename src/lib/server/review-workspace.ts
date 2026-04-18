@@ -28,23 +28,22 @@ export const DEFAULT_PROJECT_INSTRUCTIONS =
 export const DEFAULT_CATEGORIES_A_JSON = JSON.stringify(['security', 'correctness']);
 export const DEFAULT_CATEGORIES_B_JSON = JSON.stringify(['performance', 'structure_architecture']);
 
-export function countSubmitters(): number {
-	return getDb()
+export async function countSubmitters(): Promise<number> {
+	const rows = await getDb()
 		.select({ id: user.id })
 		.from(user)
-		.where(eq(user.role, 'submitter'))
-		.all().length;
+		.where(eq(user.role, 'submitter'));
+	return rows.length;
 }
 
-export function ensureActiveProjectForSubmitter(submitterId: string) {
+export async function ensureActiveProjectForSubmitter(submitterId: string) {
 	const db = getDb();
-	const rows = db
+	const rows = await db
 		.select()
 		.from(project)
 		.where(and(eq(project.submitterId, submitterId), ne(project.status, 'completed')))
 		.orderBy(desc(project.createdAt))
-		.limit(1)
-		.all();
+		.limit(1);
 	if (rows.length > 0) return rows[0];
 
 	const now = Date.now();
@@ -61,76 +60,72 @@ export function ensureActiveProjectForSubmitter(submitterId: string) {
 		createdAt: now,
 		updatedAt: now
 	};
-	db.insert(project).values(row).run();
+	await db.insert(project).values(row);
 	return row;
 }
 
-export function submitProjectRepoUrl(projectId: string, submitterId: string, giteaUrl: string) {
+export async function submitProjectRepoUrl(projectId: string, submitterId: string, giteaUrl: string) {
 	const db = getDb();
 	const trimmed = giteaUrl.trim();
 	if (!trimmed.startsWith('http://') && !trimmed.startsWith('https://')) {
 		return { ok: false as const, error: 'URL must start with http:// or https://' };
 	}
-	const rows = db
+	const rows = await db
 		.select()
 		.from(project)
 		.where(and(eq(project.id, projectId), eq(project.submitterId, submitterId)))
-		.limit(1)
-		.all();
+		.limit(1);
 	if (!rows[0]) return { ok: false as const, error: 'Project not found' };
 	const p = rows[0];
 	if (p.status === 'completed') return { ok: false as const, error: 'Project already completed' };
 	const now = Date.now();
-	db.update(project)
+	await db
+		.update(project)
 		.set({
 			giteaUrl: trimmed,
 			status: 'repo_submitted',
 			submissionProgress: 'repo_submitted',
 			updatedAt: now
 		})
-		.where(eq(project.id, projectId))
-		.run();
+		.where(eq(project.id, projectId));
 	return { ok: true as const };
 }
 
-export function getPairForProject(projectId: string) {
-	const rows = getDb()
+export async function getPairForProject(projectId: string) {
+	const rows = await getDb()
 		.select()
 		.from(reviewPair)
 		.where(eq(reviewPair.projectId, projectId))
-		.limit(1)
-		.all();
+		.limit(1);
 	return rows[0] ?? null;
 }
 
-export function getReviewerPairRow(reviewerId: string) {
+export async function getReviewerPairRow(reviewerId: string) {
 	const db = getDb();
-	const rows = db
+	const rows = await db
 		.select()
 		.from(reviewPair)
-		.where(or(eq(reviewPair.reviewerAId, reviewerId), eq(reviewPair.reviewerBId, reviewerId)))
-		.all();
-	const active = rows
-		.filter((p) => {
-			const proj = getProjectById(p.projectId);
-			return proj && proj.status !== 'completed';
-		})
-		.sort((a, b) => b.createdAt - a.createdAt);
+		.where(or(eq(reviewPair.reviewerAId, reviewerId), eq(reviewPair.reviewerBId, reviewerId)));
+	const active: (typeof rows)[number][] = [];
+	for (const p of rows) {
+		const proj = await getProjectById(p.projectId);
+		if (proj && proj.status !== 'completed') active.push(p);
+	}
+	active.sort((a, b) => b.createdAt - a.createdAt);
 	return active[0] ?? null;
 }
 
-export function getProjectById(projectId: string) {
-	const rows = getDb().select().from(project).where(eq(project.id, projectId)).limit(1).all();
+export async function getProjectById(projectId: string) {
+	const rows = await getDb().select().from(project).where(eq(project.id, projectId)).limit(1);
 	return rows[0] ?? null;
 }
 
-export function userPublicRow(userId: string) {
-	const rows = getDb()
+export async function userPublicRow(userId: string) {
+	const rows = await getDb()
 		.select({ id: user.id, username: user.username, email: user.email, role: user.role })
 		.from(user)
 		.where(eq(user.id, userId))
-		.limit(1)
-		.all();
+		.limit(1);
 	return rows[0] ?? null;
 }
 
@@ -141,10 +136,15 @@ export type ReviewRoomLabels = {
 	reviewerBUsername: string;
 };
 
-export function reviewRoomDisplayLabels(submitterId: string, pair: ReviewPairRow): ReviewRoomLabels {
-	const sub = userPublicRow(submitterId);
-	const a = userPublicRow(pair.reviewerAId);
-	const b = userPublicRow(pair.reviewerBId);
+export async function reviewRoomDisplayLabels(
+	submitterId: string,
+	pair: ReviewPairRow
+): Promise<ReviewRoomLabels> {
+	const [sub, a, b] = await Promise.all([
+		userPublicRow(submitterId),
+		userPublicRow(pair.reviewerAId),
+		userPublicRow(pair.reviewerBId)
+	]);
 	return {
 		submitterUsername: sub?.username ?? 'Submitter',
 		reviewerAUsername: a?.username ?? 'Reviewer A',
@@ -152,16 +152,15 @@ export function reviewRoomDisplayLabels(submitterId: string, pair: ReviewPairRow
 	};
 }
 
-export function listUsersForAdmin() {
-	return getDb()
+export async function listUsersForAdmin() {
+	return await getDb()
 		.select({ id: user.id, username: user.username, email: user.email, role: user.role })
 		.from(user)
-		.orderBy(asc(user.username))
-		.all();
+		.orderBy(asc(user.username));
 }
 
-export function listProjectsWithSubmittersForAdmin() {
-	return getDb()
+export async function listProjectsWithSubmittersForAdmin() {
+	return await getDb()
 		.select({
 			id: project.id,
 			status: project.status,
@@ -172,11 +171,10 @@ export function listProjectsWithSubmittersForAdmin() {
 		})
 		.from(project)
 		.innerJoin(user, eq(project.submitterId, user.id))
-		.orderBy(desc(project.createdAt))
-		.all();
+		.orderBy(desc(project.createdAt));
 }
 
-export function assignReviewPair(params: {
+export async function assignReviewPair(params: {
 	projectId: string;
 	reviewerAId: string;
 	reviewerBId: string;
@@ -188,60 +186,59 @@ export function assignReviewPair(params: {
 	if (reviewerAId === reviewerBId) return { ok: false as const, error: 'Pick two different reviewers' };
 
 	const db = getDb();
-	const a = userPublicRow(reviewerAId);
-	const b = userPublicRow(reviewerBId);
+	const [a, b, p, existingPair] = await Promise.all([
+		userPublicRow(reviewerAId),
+		userPublicRow(reviewerBId),
+		getProjectById(projectId),
+		getPairForProject(projectId)
+	]);
 	if (!a || a.role !== 'reviewer') return { ok: false as const, error: 'Reviewer A must be a reviewer account' };
 	if (!b || b.role !== 'reviewer') return { ok: false as const, error: 'Reviewer B must be a reviewer account' };
 
-	const p = getProjectById(projectId);
 	if (!p) return { ok: false as const, error: 'Project not found' };
 	if (p.status !== 'repo_submitted') {
 		return { ok: false as const, error: 'Project must have a submitted repo (status repo_submitted) before pairing' };
 	}
-	if (getPairForProject(projectId)) return { ok: false as const, error: 'This project already has a reviewer pair' };
+	if (existingPair) return { ok: false as const, error: 'This project already has a reviewer pair' };
 
 	const now = Date.now();
 	const id = generateIdFromEntropySize(16);
-	db.insert(reviewPair)
-		.values({
-			id,
-			projectId,
-			reviewerAId,
-			reviewerBId,
-			categoriesAJson: params.categoriesAJson ?? DEFAULT_CATEGORIES_A_JSON,
-			categoriesBJson: params.categoriesBJson ?? DEFAULT_CATEGORIES_B_JSON,
-			createdById: adminId,
-			createdAt: now
-		})
-		.run();
+	await db.insert(reviewPair).values({
+		id,
+		projectId,
+		reviewerAId,
+		reviewerBId,
+		categoriesAJson: params.categoriesAJson ?? DEFAULT_CATEGORIES_A_JSON,
+		categoriesBJson: params.categoriesBJson ?? DEFAULT_CATEGORIES_B_JSON,
+		createdById: adminId,
+		createdAt: now
+	});
 
-	db.update(project)
+	await db
+		.update(project)
 		.set({ status: 'review_active', submissionProgress: 'testing', updatedAt: now })
-		.where(eq(project.id, projectId))
-		.run();
+		.where(eq(project.id, projectId));
 
 	return { ok: true as const };
 }
 
-export function markProjectCompleted(projectId: string) {
+export async function markProjectCompleted(projectId: string) {
 	const now = Date.now();
-	getDb()
+	await getDb()
 		.update(project)
 		.set({ status: 'completed', submissionProgress: 'completed', updatedAt: now })
-		.where(eq(project.id, projectId))
-		.run();
+		.where(eq(project.id, projectId));
 }
 
 /** Persists prototype Testing + Code review sprint state (threads, verdicts, rounds). */
-export function saveProjectReviewWorkspace(projectId: string, testingJson: string, codeReviewJson: string) {
+export async function saveProjectReviewWorkspace(projectId: string, testingJson: string, codeReviewJson: string) {
 	const now = Date.now();
-	getDb()
+	await getDb()
 		.update(project)
 		.set({ testingJson, codeReviewJson, updatedAt: now })
-		.where(eq(project.id, projectId))
-		.run();
+		.where(eq(project.id, projectId));
 	try {
-		syncReviewRelationalTablesFromPayload(projectId, testingJson, codeReviewJson);
+		await syncReviewRelationalTablesFromPayload(projectId, testingJson, codeReviewJson);
 	} catch (e) {
 		console.error('[review-workspace] syncReviewRelationalTablesFromPayload', e);
 	}
@@ -249,7 +246,7 @@ export function saveProjectReviewWorkspace(projectId: string, testingJson: strin
 
 export { parseCodeReviewSavePayload } from './code-review-payload';
 
-function syncReviewRelationalTablesFromPayload(
+async function syncReviewRelationalTablesFromPayload(
 	projectId: string,
 	testingJson: string,
 	codeReviewJson: string
@@ -257,11 +254,11 @@ function syncReviewRelationalTablesFromPayload(
 	const db = getDb();
 	const now = Date.now();
 
-	db.transaction((tx) => {
-		tx.delete(testingThreadMessage).where(eq(testingThreadMessage.projectId, projectId)).run();
-		tx.delete(testingItemProgress).where(eq(testingItemProgress.projectId, projectId)).run();
-		tx.delete(codeReviewThreadMessage).where(eq(codeReviewThreadMessage.projectId, projectId)).run();
-		tx.delete(codeReviewObservationProgress).where(eq(codeReviewObservationProgress.projectId, projectId)).run();
+	await db.transaction(async (tx) => {
+		await tx.delete(testingThreadMessage).where(eq(testingThreadMessage.projectId, projectId));
+		await tx.delete(testingItemProgress).where(eq(testingItemProgress.projectId, projectId));
+		await tx.delete(codeReviewThreadMessage).where(eq(codeReviewThreadMessage.projectId, projectId));
+		await tx.delete(codeReviewObservationProgress).where(eq(codeReviewObservationProgress.projectId, projectId));
 
 		let testingDoc: { testingItems?: TestingItem[]; testingRound?: number };
 		try {
@@ -275,34 +272,30 @@ function syncReviewRelationalTablesFromPayload(
 				: 1;
 		for (const item of testingDoc.testingItems ?? []) {
 			if (!item?.id) continue;
-			tx.insert(testingItemProgress)
-				.values({
-					projectId,
-					itemId: item.id,
-					section: item.section,
-					itemSummary: (typeof item.text === 'string' ? item.text : item.id).slice(0, 500),
-					mandatoryOwner: item.mandatoryOwner ?? null,
-					janeVerdict: item.jane,
-					joeVerdict: item.joe,
-					testingRound: tr,
-					updatedAt: now
-				})
-				.run();
+			await tx.insert(testingItemProgress).values({
+				projectId,
+				itemId: item.id,
+				section: item.section,
+				itemSummary: (typeof item.text === 'string' ? item.text : item.id).slice(0, 500),
+				mandatoryOwner: item.mandatoryOwner ?? null,
+				janeVerdict: item.jane,
+				joeVerdict: item.joe,
+				testingRound: tr,
+				updatedAt: now
+			});
 			for (const c of item.comments ?? []) {
 				if (!c || typeof c.text !== 'string' || !c.text.trim()) continue;
 				const author = String(c.author);
 				if (author !== 'sandra' && author !== 'jane' && author !== 'joe') continue;
-				tx.insert(testingThreadMessage)
-					.values({
-						id: generateIdFromEntropySize(16),
-						projectId,
-						itemId: item.id,
-						round: typeof c.round === 'number' ? c.round : 0,
-						authorPersona: author,
-						body: c.text,
-						postedAt: typeof c.at === 'string' ? (Date.parse(c.at) || now) : now
-					})
-					.run();
+				await tx.insert(testingThreadMessage).values({
+					id: generateIdFromEntropySize(16),
+					projectId,
+					itemId: item.id,
+					round: typeof c.round === 'number' ? c.round : 0,
+					authorPersona: author,
+					body: c.text,
+					postedAt: typeof c.at === 'string' ? (Date.parse(c.at) || now) : now
+				});
 			}
 		}
 
@@ -314,33 +307,29 @@ function syncReviewRelationalTablesFromPayload(
 				for (const o of cat.observations) {
 					const row = s.observationRows[o.id];
 					if (!row) continue;
-					tx.insert(codeReviewObservationProgress)
-						.values({
-							projectId,
-							categoryId: cat.id,
-							observationId: o.id,
-							janeVerdict: row.jane,
-							joeVerdict: row.joe,
-							codeReviewRound: cr.codeReviewRound,
-							updatedAt: now
-						})
-						.run();
+					await tx.insert(codeReviewObservationProgress).values({
+						projectId,
+						categoryId: cat.id,
+						observationId: o.id,
+						janeVerdict: row.jane,
+						joeVerdict: row.joe,
+						codeReviewRound: cr.codeReviewRound,
+						updatedAt: now
+					});
 					for (const c of row.comments ?? []) {
 						if (!c || typeof c.text !== 'string' || !c.text.trim()) continue;
 						const author = String(c.author);
 						if (author !== 'sandra' && author !== 'jane' && author !== 'joe') continue;
-						tx.insert(codeReviewThreadMessage)
-							.values({
-								id: generateIdFromEntropySize(16),
-								projectId,
-								categoryId: cat.id,
-								observationId: o.id,
-								round: typeof c.round === 'number' ? c.round : 0,
-								authorPersona: author,
-								body: c.text,
-								postedAt: typeof c.at === 'string' ? (Date.parse(c.at) || now) : now
-							})
-							.run();
+						await tx.insert(codeReviewThreadMessage).values({
+							id: generateIdFromEntropySize(16),
+							projectId,
+							categoryId: cat.id,
+							observationId: o.id,
+							round: typeof c.round === 'number' ? c.round : 0,
+							authorPersona: author,
+							body: c.text,
+							postedAt: typeof c.at === 'string' ? (Date.parse(c.at) || now) : now
+						});
 					}
 				}
 			}
@@ -348,52 +337,48 @@ function syncReviewRelationalTablesFromPayload(
 	});
 }
 
-export function listTestingItemProgressForProject(projectId: string) {
-	return getDb()
+export async function listTestingItemProgressForProject(projectId: string) {
+	return await getDb()
 		.select()
 		.from(testingItemProgress)
 		.where(eq(testingItemProgress.projectId, projectId))
-		.orderBy(asc(testingItemProgress.itemId))
-		.all();
+		.orderBy(asc(testingItemProgress.itemId));
 }
 
-export function listTestingThreadMessagesForProject(projectId: string) {
-	return getDb()
+export async function listTestingThreadMessagesForProject(projectId: string) {
+	return await getDb()
 		.select()
 		.from(testingThreadMessage)
 		.where(eq(testingThreadMessage.projectId, projectId))
-		.orderBy(asc(testingThreadMessage.postedAt), asc(testingThreadMessage.id))
-		.all();
+		.orderBy(asc(testingThreadMessage.postedAt), asc(testingThreadMessage.id));
 }
 
-export function listCodeReviewObservationProgressForProject(projectId: string) {
-	return getDb()
+export async function listCodeReviewObservationProgressForProject(projectId: string) {
+	return await getDb()
 		.select()
 		.from(codeReviewObservationProgress)
 		.where(eq(codeReviewObservationProgress.projectId, projectId))
 		.orderBy(
 			asc(codeReviewObservationProgress.categoryId),
 			asc(codeReviewObservationProgress.observationId)
-		)
-		.all();
+		);
 }
 
-export function listCodeReviewThreadMessagesForProject(projectId: string) {
-	return getDb()
+export async function listCodeReviewThreadMessagesForProject(projectId: string) {
+	return await getDb()
 		.select()
 		.from(codeReviewThreadMessage)
 		.where(eq(codeReviewThreadMessage.projectId, projectId))
-		.orderBy(asc(codeReviewThreadMessage.postedAt), asc(codeReviewThreadMessage.id))
-		.all();
+		.orderBy(asc(codeReviewThreadMessage.postedAt), asc(codeReviewThreadMessage.id));
 }
 
-export function canAccessProject(userId: string, role: string, projectId: string): boolean {
-	const p = getProjectById(projectId);
+export async function canAccessProject(userId: string, role: string, projectId: string): Promise<boolean> {
+	const p = await getProjectById(projectId);
 	if (!p) return false;
 	if (role === 'admin') return true;
 	if (role === 'submitter' && p.submitterId === userId) return true;
 	if (role === 'reviewer') {
-		const pair = getPairForProject(projectId);
+		const pair = await getPairForProject(projectId);
 		if (!pair) return false;
 		return pair.reviewerAId === userId || pair.reviewerBId === userId;
 	}
@@ -421,32 +406,29 @@ export function categoryAssigneeMapFromPair(pair: ReviewPairRow): Record<string,
 	return map;
 }
 
-export function startNextProjectBatch(submitterId: string) {
+export async function startNextProjectBatch(submitterId: string) {
 	const db = getDb();
-	const open = db
+	const open = await db
 		.select()
 		.from(project)
 		.where(and(eq(project.submitterId, submitterId), ne(project.status, 'completed')))
-		.limit(1)
-		.all();
+		.limit(1);
 	if (open.length > 0) {
 		return { ok: false as const, error: 'Finish or complete the current project before starting a new batch' };
 	}
 	const now = Date.now();
 	const id = generateIdFromEntropySize(16);
-	db.insert(project)
-		.values({
-			id,
-			submitterId,
-			instructions: DEFAULT_PROJECT_INSTRUCTIONS,
-			giteaUrl: null,
-			status: 'awaiting_link',
-			testingJson: null,
-			codeReviewJson: null,
-			submissionProgress: 'awaiting_repo',
-			createdAt: now,
-			updatedAt: now
-		})
-		.run();
+	await db.insert(project).values({
+		id,
+		submitterId,
+		instructions: DEFAULT_PROJECT_INSTRUCTIONS,
+		giteaUrl: null,
+		status: 'awaiting_link',
+		testingJson: null,
+		codeReviewJson: null,
+		submissionProgress: 'awaiting_repo',
+		createdAt: now,
+		updatedAt: now
+	});
 	return { ok: true as const, projectId: id };
 }

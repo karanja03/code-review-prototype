@@ -32,13 +32,13 @@ export const load: PageServerLoad = async ({ locals }) => {
 	}
 	const u = locals.user;
 	if (u.role === 'submitter') {
-		let projectRow = ensureActiveProjectForSubmitter(u.id);
-		recomputeAndPersistSubmissionProgress(projectRow.id);
-		projectRow = getProjectById(projectRow.id) ?? projectRow;
-		const pair = getPairForProject(projectRow.id);
+		let projectRow = await ensureActiveProjectForSubmitter(u.id);
+		await recomputeAndPersistSubmissionProgress(projectRow.id);
+		projectRow = (await getProjectById(projectRow.id)) ?? projectRow;
+		const pair = await getPairForProject(projectRow.id);
 		const categoryMap = pair ? categoryAssigneeMapFromPair(pair) : null;
 		const canMarkComplete = projectRow.submitterId === u.id;
-		const reviewRoom = pair ? reviewRoomDisplayLabels(projectRow.submitterId, pair) : null;
+		const reviewRoom = pair ? await reviewRoomDisplayLabels(projectRow.submitterId, pair) : null;
 		return {
 			workspace: {
 				kind: 'submitter' as const,
@@ -52,17 +52,17 @@ export const load: PageServerLoad = async ({ locals }) => {
 		};
 	}
 	if (u.role === 'reviewer') {
-		const pair = getReviewerPairRow(u.id);
-		let projectRow = pair ? getProjectById(pair.projectId) : null;
+		const pair = await getReviewerPairRow(u.id);
+		let projectRow = pair ? await getProjectById(pair.projectId) : null;
 		if (projectRow) {
-			recomputeAndPersistSubmissionProgress(projectRow.id);
-			projectRow = getProjectById(projectRow.id) ?? projectRow;
+			await recomputeAndPersistSubmissionProgress(projectRow.id);
+			projectRow = (await getProjectById(projectRow.id)) ?? projectRow;
 		}
 		const categoryMap = pair ? categoryAssigneeMapFromPair(pair) : null;
 		const persona =
 			pair && projectRow ? reviewPersonaForUser(pair, u.id, projectRow.submitterId) : null;
 		const reviewRoom =
-			pair && projectRow ? reviewRoomDisplayLabels(projectRow.submitterId, pair) : null;
+			pair && projectRow ? await reviewRoomDisplayLabels(projectRow.submitterId, pair) : null;
 		return {
 			workspace: {
 				kind: 'reviewer' as const,
@@ -101,14 +101,14 @@ export const actions: Actions = {
 		if (typeof projectId !== 'string' || typeof url !== 'string') {
 			return fail(400, { message: 'Missing fields' });
 		}
-		const res = submitProjectRepoUrl(projectId, u.id, url);
+		const res = await submitProjectRepoUrl(projectId, u.id, url);
 		if (!res.ok) return fail(400, { message: res.error });
 		throw redirect(303, '/');
 	},
 	startNextBatch: async (event) => {
 		const u = event.locals.user;
 		if (!u || u.role !== 'submitter') return fail(403);
-		const res = startNextProjectBatch(u.id);
+		const res = await startNextProjectBatch(u.id);
 		if (!res.ok) return fail(400, { message: res.error });
 		throw redirect(303, '/');
 	},
@@ -120,7 +120,7 @@ export const actions: Actions = {
 		const testingPayload = fd.get('testingPayload');
 		const codeReviewPayload = fd.get('codeReviewPayload');
 		if (typeof projectId !== 'string') return fail(400, { message: 'Missing project' });
-		if (!canAccessProject(u.id, u.role, projectId)) return fail(403);
+		if (!(await canAccessProject(u.id, u.role, projectId))) return fail(403);
 		if (typeof testingPayload !== 'string' || typeof codeReviewPayload !== 'string') {
 			return fail(400, { message: 'Missing payloads' });
 		}
@@ -137,9 +137,9 @@ export const actions: Actions = {
 			return fail(400, { message: 'Invalid code review payload' });
 		}
 
-		saveProjectReviewWorkspace(projectId, testingPayload, codeReviewPayload);
-		refreshProjectReviewSnapshotsFromRelational(projectId);
-		recomputeAndPersistSubmissionProgress(projectId);
+		await saveProjectReviewWorkspace(projectId, testingPayload, codeReviewPayload);
+		await refreshProjectReviewSnapshotsFromRelational(projectId);
+		await recomputeAndPersistSubmissionProgress(projectId);
 		notifyProjectReviewUpdate(projectId);
 		return { success: true };
 	},
@@ -153,12 +153,12 @@ export const actions: Actions = {
 		const body = fd.get('body');
 		const roundStr = fd.get('round');
 		if (typeof projectId !== 'string' || typeof itemId !== 'string') return fail(400);
-		if (!canAccessProject(u.id, u.role, projectId)) return fail(403);
+		if (!(await canAccessProject(u.id, u.role, projectId))) return fail(403);
 		if (typeof authorPersona !== 'string' || typeof body !== 'string' || typeof roundStr !== 'string') {
 			return fail(400);
 		}
 		const round = Number(roundStr);
-		const res = appendTestingMessageLive({
+		const res = await appendTestingMessageLive({
 			projectId,
 			userId: u.id,
 			role: u.role,
@@ -181,11 +181,11 @@ export const actions: Actions = {
 		const verdict = fd.get('verdict');
 		const testingRoundStr = fd.get('testingRound');
 		if (typeof projectId !== 'string' || typeof itemId !== 'string') return fail(400);
-		if (!canAccessProject(u.id, u.role, projectId)) return fail(403);
+		if (!(await canAccessProject(u.id, u.role, projectId))) return fail(403);
 		if (persona !== 'jane' && persona !== 'joe') return fail(400);
 		if (verdict !== 'accept' && verdict !== 'decline') return fail(400);
 		const tr = typeof testingRoundStr === 'string' ? Number(testingRoundStr) : NaN;
-		const res = setTestingVerdictLive({
+		const res = await setTestingVerdictLive({
 			projectId,
 			userId: u.id,
 			role: u.role,
@@ -211,12 +211,12 @@ export const actions: Actions = {
 		if (typeof projectId !== 'string' || typeof categoryId !== 'string' || typeof observationId !== 'string') {
 			return fail(400);
 		}
-		if (!canAccessProject(u.id, u.role, projectId)) return fail(403);
+		if (!(await canAccessProject(u.id, u.role, projectId))) return fail(403);
 		if (typeof authorPersona !== 'string' || typeof body !== 'string' || typeof roundStr !== 'string') {
 			return fail(400);
 		}
 		const round = Number(roundStr);
-		const res = appendCodeReviewMessageLive({
+		const res = await appendCodeReviewMessageLive({
 			projectId,
 			userId: u.id,
 			role: u.role,
@@ -243,11 +243,11 @@ export const actions: Actions = {
 		if (typeof projectId !== 'string' || typeof categoryId !== 'string' || typeof observationId !== 'string') {
 			return fail(400);
 		}
-		if (!canAccessProject(u.id, u.role, projectId)) return fail(403);
+		if (!(await canAccessProject(u.id, u.role, projectId))) return fail(403);
 		if (persona !== 'jane' && persona !== 'joe') return fail(400);
 		if (verdict !== 'accept' && verdict !== 'decline') return fail(400);
 		const cr = typeof codeReviewRoundStr === 'string' ? Number(codeReviewRoundStr) : NaN;
-		const res = setCodeReviewVerdictLive({
+		const res = await setCodeReviewVerdictLive({
 			projectId,
 			userId: u.id,
 			role: u.role,
@@ -267,12 +267,12 @@ export const actions: Actions = {
 		const fd = await event.request.formData();
 		const projectId = fd.get('projectId');
 		if (typeof projectId !== 'string') return fail(400);
-		const projectRow = getProjectById(projectId);
+		const projectRow = await getProjectById(projectId);
 		if (!projectRow) return fail(404);
 		const isSubmitter = u.role === 'submitter' && projectRow.submitterId === u.id;
 		const isAdmin = u.role === 'admin';
 		if (!isSubmitter && !isAdmin) return fail(403);
-		markProjectCompleted(projectId);
+		await markProjectCompleted(projectId);
 		notifyProjectReviewUpdate(projectId);
 		throw redirect(303, '/');
 	}

@@ -25,12 +25,11 @@ export const actions: Actions = {
 		const asUsername = trimmed.toLowerCase();
 
 		const db = getDb();
-		const rows = db
+		const rows = await db
 			.select()
 			.from(user)
 			.where(or(eq(user.email, asEmail), eq(user.username, asUsername)))
-			.limit(2)
-			.all();
+			.limit(2);
 
 		const existingUser =
 			rows.find((r) => r.email === asEmail) ?? rows.find((r) => r.username === asUsername);

@@ -38,10 +38,10 @@ export function notifyProjectReviewUpdate(projectId: string) {
 	broadcastToProject(projectId, 'review:invalidate', { projectId });
 }
 
-function testingMandatoryAllAccepted(projectId: string): boolean {
+async function testingMandatoryAllAccepted(projectId: string): Promise<boolean> {
 	const template = withMandatoryOwners(createFullTestingItems());
 	const mandatory = template.filter((t) => t.section === 'mandatory');
-	const rows = listTestingItemProgressForProject(projectId);
+	const rows = await listTestingItemProgressForProject(projectId);
 	const byId = new Map(rows.map((r) => [r.itemId, r]));
 	for (const t of mandatory) {
 		const owner = t.mandatoryOwner;
@@ -54,9 +54,9 @@ function testingMandatoryAllAccepted(projectId: string): boolean {
 	return true;
 }
 
-function codeReviewAllAccepted(projectId: string): boolean {
-	const pair = getPairForProject(projectId);
-	const rows = listCodeReviewObservationProgressForProject(projectId);
+async function codeReviewAllAccepted(projectId: string): Promise<boolean> {
+	const pair = await getPairForProject(projectId);
+	const rows = await listCodeReviewObservationProgressForProject(projectId);
 	const byKey = new Map(rows.map((r) => [`${r.categoryId}:${r.observationId}`, r]));
 	const catMap = pair ? categoryAssigneeMapFromPair(pair) : {};
 	for (const cat of CATEGORIES) {
@@ -70,26 +70,25 @@ function codeReviewAllAccepted(projectId: string): boolean {
 	return true;
 }
 
-export function deriveSubmissionProgress(projectId: string): SubmissionProgress {
-	const p = getProjectById(projectId);
+export async function deriveSubmissionProgress(projectId: string): Promise<SubmissionProgress> {
+	const p = await getProjectById(projectId);
 	if (!p) return 'awaiting_repo';
 	if (p.status === 'completed') return 'completed';
-	const pair = getPairForProject(projectId);
+	const pair = await getPairForProject(projectId);
 	if (p.status === 'awaiting_link') return 'awaiting_repo';
 	if (!pair && p.status === 'repo_submitted') return 'repo_submitted';
-	if (pair && codeReviewAllAccepted(projectId)) return 'code_review_passed';
-	if (pair && testingMandatoryAllAccepted(projectId)) return 'testing_passed';
+	if (pair && (await codeReviewAllAccepted(projectId))) return 'code_review_passed';
+	if (pair && (await testingMandatoryAllAccepted(projectId))) return 'testing_passed';
 	if (pair || p.status === 'review_active') return 'testing';
 	return 'repo_submitted';
 }
 
-export function recomputeAndPersistSubmissionProgress(projectId: string) {
-	const next = deriveSubmissionProgress(projectId);
-	getDb()
+export async function recomputeAndPersistSubmissionProgress(projectId: string) {
+	const next = await deriveSubmissionProgress(projectId);
+	await getDb()
 		.update(project)
 		.set({ submissionProgress: next, updatedAt: Date.now() })
-		.where(eq(project.id, projectId))
-		.run();
+		.where(eq(project.id, projectId));
 }
 
 function parseTestingPrev(json: string | null): { testingRound: number; byId: Map<string, TestingItem> } {
@@ -108,12 +107,12 @@ function parseTestingPrev(json: string | null): { testingRound: number; byId: Ma
 	return { testingRound: round, byId };
 }
 
-export function buildTestingSnapshotJson(projectId: string, previousJson: string | null): string {
+export async function buildTestingSnapshotJson(projectId: string, previousJson: string | null): Promise<string> {
 	const { testingRound: prevRound, byId: prevById } = parseTestingPrev(previousJson);
 	const template = withMandatoryOwners(createFullTestingItems());
-	const progress = listTestingItemProgressForProject(projectId);
+	const progress = await listTestingItemProgressForProject(projectId);
 	const progById = new Map(progress.map((r) => [r.itemId, r]));
-	const msgs = listTestingThreadMessagesForProject(projectId);
+	const msgs = await listTestingThreadMessagesForProject(projectId);
 	const msgsByItem = new Map<string, (typeof msgs)[number][]>();
 	for (const m of msgs) {
 		const list = msgsByItem.get(m.itemId) ?? [];
@@ -160,7 +159,10 @@ function emptyCategorySessions(): Record<string, CategorySession> {
 	return m;
 }
 
-export function buildCodeReviewSnapshotJson(projectId: string, previousJson: string | null): string {
+export async function buildCodeReviewSnapshotJson(
+	projectId: string,
+	previousJson: string | null
+): Promise<string> {
 	const parsed = previousJson ? parseCodeReviewSavePayload(previousJson) : null;
 	let codeReviewRound = parsed?.codeReviewRound ?? 1;
 	const prevSessions = parsed?.sessions;
@@ -182,8 +184,8 @@ export function buildCodeReviewSnapshotJson(projectId: string, previousJson: str
 			};
 		}
 	}
-	const prog = listCodeReviewObservationProgressForProject(projectId);
-	const msgs = listCodeReviewThreadMessagesForProject(projectId);
+	const prog = await listCodeReviewObservationProgressForProject(projectId);
+	const msgs = await listCodeReviewThreadMessagesForProject(projectId);
 	for (const r of prog) {
 		codeReviewRound = Math.max(codeReviewRound, r.codeReviewRound);
 		const row = sessions[r.categoryId]?.observationRows[r.observationId];
@@ -231,27 +233,24 @@ export function buildCodeReviewSnapshotJson(projectId: string, previousJson: str
 	return JSON.stringify(payload);
 }
 
-export function refreshProjectReviewSnapshotsFromRelational(projectId: string) {
-	const p = getProjectById(projectId);
+export async function refreshProjectReviewSnapshotsFromRelational(projectId: string) {
+	const p = await getProjectById(projectId);
 	if (!p) return;
-	const testingJson = buildTestingSnapshotJson(projectId, p.testingJson);
-	const codeReviewJson = buildCodeReviewSnapshotJson(projectId, p.codeReviewJson);
-	getDb()
+	const testingJson = await buildTestingSnapshotJson(projectId, p.testingJson);
+	const codeReviewJson = await buildCodeReviewSnapshotJson(projectId, p.codeReviewJson);
+	await getDb()
 		.update(project)
 		.set({ testingJson, codeReviewJson, updatedAt: Date.now() })
-		.where(eq(project.id, projectId))
-		.run();
+		.where(eq(project.id, projectId));
 }
 
 function assertLivePersona(
-	projectId: string,
+	pair: Awaited<ReturnType<typeof getPairForProject>>,
+	p: NonNullable<Awaited<ReturnType<typeof getProjectById>>>,
 	userId: string,
 	role: string,
 	declared: string
 ): 'sandra' | 'jane' | 'joe' | null {
-	const p = getProjectById(projectId);
-	if (!p) return null;
-	const pair = getPairForProject(projectId);
 	const persona = reviewPersonaForUser(pair, userId, p.submitterId);
 	if (!persona) return null;
 	if (persona !== declared) return null;
@@ -261,7 +260,7 @@ function assertLivePersona(
 	return persona;
 }
 
-export function appendTestingMessageLive(params: {
+export async function appendTestingMessageLive(params: {
 	projectId: string;
 	userId: string;
 	role: string;
@@ -271,7 +270,9 @@ export function appendTestingMessageLive(params: {
 	round: number;
 }) {
 	const { projectId, userId, role, itemId, authorPersona, body, round } = params;
-	const persona = assertLivePersona(projectId, userId, role, authorPersona);
+	const [p, pair] = await Promise.all([getProjectById(projectId), getPairForProject(projectId)]);
+	if (!p) return { ok: false as const, error: 'Forbidden' };
+	const persona = assertLivePersona(pair, p, userId, role, authorPersona);
 	if (!persona) return { ok: false as const, error: 'Forbidden' };
 	const template = withMandatoryOwners(createFullTestingItems());
 	if (!template.some((t) => t.id === itemId)) return { ok: false as const, error: 'Unknown item' };
@@ -279,24 +280,22 @@ export function appendTestingMessageLive(params: {
 	if (!trimmed) return { ok: false as const, error: 'Empty body' };
 	const db = getDb();
 	const now = Date.now();
-	db.insert(testingThreadMessage)
-		.values({
-			id: generateIdFromEntropySize(16),
-			projectId,
-			itemId,
-			round: Number.isFinite(round) && round >= 0 ? round : 0,
-			authorPersona: persona,
-			body: trimmed,
-			postedAt: now,
-			authorUserId: userId
-		})
-		.run();
-	refreshProjectReviewSnapshotsFromRelational(projectId);
-	recomputeAndPersistSubmissionProgress(projectId);
+	await db.insert(testingThreadMessage).values({
+		id: generateIdFromEntropySize(16),
+		projectId,
+		itemId,
+		round: Number.isFinite(round) && round >= 0 ? round : 0,
+		authorPersona: persona,
+		body: trimmed,
+		postedAt: now,
+		authorUserId: userId
+	});
+	await refreshProjectReviewSnapshotsFromRelational(projectId);
+	await recomputeAndPersistSubmissionProgress(projectId);
 	return { ok: true as const };
 }
 
-export function setTestingVerdictLive(params: {
+export async function setTestingVerdictLive(params: {
 	projectId: string;
 	userId: string;
 	role: string;
@@ -306,7 +305,9 @@ export function setTestingVerdictLive(params: {
 	testingRound: number;
 }) {
 	const { projectId, userId, role, persona, itemId, verdict, testingRound } = params;
-	const eff = assertLivePersona(projectId, userId, role, persona);
+	const [p, pair] = await Promise.all([getProjectById(projectId), getPairForProject(projectId)]);
+	if (!p) return { ok: false as const, error: 'Forbidden' };
+	const eff = assertLivePersona(pair, p, userId, role, persona);
 	if (eff !== persona) return { ok: false as const, error: 'Forbidden' };
 	const template = withMandatoryOwners(createFullTestingItems());
 	const item = template.find((t) => t.id === itemId);
@@ -316,12 +317,12 @@ export function setTestingVerdictLive(params: {
 	}
 	const db = getDb();
 	const now = Date.now();
-	const existing = db
+	const existingRows = await db
 		.select()
 		.from(testingItemProgress)
 		.where(and(eq(testingItemProgress.projectId, projectId), eq(testingItemProgress.itemId, itemId)))
-		.limit(1)
-		.all()[0];
+		.limit(1);
+	const existing = existingRows[0];
 	const jane = (existing?.janeVerdict ?? 'pending') as string;
 	const joe = (existing?.joeVerdict ?? 'pending') as string;
 	const nextJane = persona === 'jane' ? verdict : jane;
@@ -333,36 +334,34 @@ export function setTestingVerdictLive(params: {
 				? testingRound
 				: 1;
 	if (existing) {
-		db.update(testingItemProgress)
+		await db
+			.update(testingItemProgress)
 			.set({
 				janeVerdict: nextJane,
 				joeVerdict: nextJoe,
 				testingRound: tr,
 				updatedAt: now
 			})
-			.where(and(eq(testingItemProgress.projectId, projectId), eq(testingItemProgress.itemId, itemId)))
-			.run();
+			.where(and(eq(testingItemProgress.projectId, projectId), eq(testingItemProgress.itemId, itemId)));
 	} else {
-		db.insert(testingItemProgress)
-			.values({
-				projectId,
-				itemId,
-				section: item.section,
-				itemSummary: item.text.slice(0, 500),
-				mandatoryOwner: item.mandatoryOwner ?? null,
-				janeVerdict: nextJane,
-				joeVerdict: nextJoe,
-				testingRound: tr,
-				updatedAt: now
-			})
-			.run();
+		await db.insert(testingItemProgress).values({
+			projectId,
+			itemId,
+			section: item.section,
+			itemSummary: item.text.slice(0, 500),
+			mandatoryOwner: item.mandatoryOwner ?? null,
+			janeVerdict: nextJane,
+			joeVerdict: nextJoe,
+			testingRound: tr,
+			updatedAt: now
+		});
 	}
-	refreshProjectReviewSnapshotsFromRelational(projectId);
-	recomputeAndPersistSubmissionProgress(projectId);
+	await refreshProjectReviewSnapshotsFromRelational(projectId);
+	await recomputeAndPersistSubmissionProgress(projectId);
 	return { ok: true as const };
 }
 
-export function appendCodeReviewMessageLive(params: {
+export async function appendCodeReviewMessageLive(params: {
 	projectId: string;
 	userId: string;
 	role: string;
@@ -373,7 +372,9 @@ export function appendCodeReviewMessageLive(params: {
 	round: number;
 }) {
 	const { projectId, userId, role, categoryId, observationId, authorPersona, body, round } = params;
-	const persona = assertLivePersona(projectId, userId, role, authorPersona);
+	const [p, pair] = await Promise.all([getProjectById(projectId), getPairForProject(projectId)]);
+	if (!p) return { ok: false as const, error: 'Forbidden' };
+	const persona = assertLivePersona(pair, p, userId, role, authorPersona);
 	if (!persona) return { ok: false as const, error: 'Forbidden' };
 	const cat = CATEGORIES.find((c) => c.id === categoryId);
 	if (!cat || !cat.observations.some((o) => o.id === observationId)) {
@@ -383,25 +384,23 @@ export function appendCodeReviewMessageLive(params: {
 	if (!trimmed) return { ok: false as const, error: 'Empty body' };
 	const db = getDb();
 	const now = Date.now();
-	db.insert(codeReviewThreadMessage)
-		.values({
-			id: generateIdFromEntropySize(16),
-			projectId,
-			categoryId,
-			observationId,
-			round: Number.isFinite(round) && round >= 0 ? round : 0,
-			authorPersona: persona,
-			body: trimmed,
-			postedAt: now,
-			authorUserId: userId
-		})
-		.run();
-	refreshProjectReviewSnapshotsFromRelational(projectId);
-	recomputeAndPersistSubmissionProgress(projectId);
+	await db.insert(codeReviewThreadMessage).values({
+		id: generateIdFromEntropySize(16),
+		projectId,
+		categoryId,
+		observationId,
+		round: Number.isFinite(round) && round >= 0 ? round : 0,
+		authorPersona: persona,
+		body: trimmed,
+		postedAt: now,
+		authorUserId: userId
+	});
+	await refreshProjectReviewSnapshotsFromRelational(projectId);
+	await recomputeAndPersistSubmissionProgress(projectId);
 	return { ok: true as const };
 }
 
-export function setCodeReviewVerdictLive(params: {
+export async function setCodeReviewVerdictLive(params: {
 	projectId: string;
 	userId: string;
 	role: string;
@@ -412,9 +411,10 @@ export function setCodeReviewVerdictLive(params: {
 	codeReviewRound: number;
 }) {
 	const { projectId, userId, role, persona, categoryId, observationId, verdict, codeReviewRound } = params;
-	const eff = assertLivePersona(projectId, userId, role, persona);
+	const [p, pair] = await Promise.all([getProjectById(projectId), getPairForProject(projectId)]);
+	if (!p) return { ok: false as const, error: 'Forbidden' };
+	const eff = assertLivePersona(pair, p, userId, role, persona);
 	if (eff !== persona) return { ok: false as const, error: 'Forbidden' };
-	const pair = getPairForProject(projectId);
 	const catMap = pair ? categoryAssigneeMapFromPair(pair) : {};
 	const assignee = catMap[categoryId] ?? CATEGORIES.find((c) => c.id === categoryId)?.assignee;
 	if (assignee !== persona) return { ok: false as const, error: 'Not assignee for category' };
@@ -424,7 +424,7 @@ export function setCodeReviewVerdictLive(params: {
 	}
 	const db = getDb();
 	const now = Date.now();
-	const existing = db
+	const existingRows = await db
 		.select()
 		.from(codeReviewObservationProgress)
 		.where(
@@ -434,8 +434,8 @@ export function setCodeReviewVerdictLive(params: {
 				eq(codeReviewObservationProgress.observationId, observationId)
 			)
 		)
-		.limit(1)
-		.all()[0];
+		.limit(1);
+	const existing = existingRows[0];
 	const jane = (existing?.janeVerdict ?? 'pending') as string;
 	const joe = (existing?.joeVerdict ?? 'pending') as string;
 	const nextJane = persona === 'jane' ? verdict : jane;
@@ -447,7 +447,8 @@ export function setCodeReviewVerdictLive(params: {
 				? codeReviewRound
 				: 1;
 	if (existing) {
-		db.update(codeReviewObservationProgress)
+		await db
+			.update(codeReviewObservationProgress)
 			.set({
 				janeVerdict: nextJane,
 				joeVerdict: nextJoe,
@@ -460,22 +461,19 @@ export function setCodeReviewVerdictLive(params: {
 					eq(codeReviewObservationProgress.categoryId, categoryId),
 					eq(codeReviewObservationProgress.observationId, observationId)
 				)
-			)
-			.run();
+			);
 	} else {
-		db.insert(codeReviewObservationProgress)
-			.values({
-				projectId,
-				categoryId,
-				observationId,
-				janeVerdict: nextJane,
-				joeVerdict: nextJoe,
-				codeReviewRound: cr,
-				updatedAt: now
-			})
-			.run();
+		await db.insert(codeReviewObservationProgress).values({
+			projectId,
+			categoryId,
+			observationId,
+			janeVerdict: nextJane,
+			joeVerdict: nextJoe,
+			codeReviewRound: cr,
+			updatedAt: now
+		});
 	}
-	refreshProjectReviewSnapshotsFromRelational(projectId);
-	recomputeAndPersistSubmissionProgress(projectId);
+	await refreshProjectReviewSnapshotsFromRelational(projectId);
+	await recomputeAndPersistSubmissionProgress(projectId);
 	return { ok: true as const };
 }

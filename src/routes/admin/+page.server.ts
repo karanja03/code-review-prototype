@@ -8,8 +8,8 @@ import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async () => {
-	const users = listUsersForAdmin();
-	const projects = listProjectsWithSubmittersForAdmin();
+	const users = await listUsersForAdmin();
+	const projects = await listProjectsWithSubmittersForAdmin();
 	const pairable = projects.filter((p) => p.status === 'repo_submitted');
 	const completed = projects.filter((p) => p.status === 'completed');
 	const active = projects.filter((p) => p.status !== 'completed');
@@ -28,7 +28,7 @@ export const actions: Actions = {
 		if (typeof projectId !== 'string' || typeof reviewerAId !== 'string' || typeof reviewerBId !== 'string') {
 			return fail(400, { message: 'Missing fields' });
 		}
-		const res = assignReviewPair({
+		const res = await assignReviewPair({
 			projectId,
 			reviewerAId,
 			reviewerBId,
@@ -43,7 +43,7 @@ export const actions: Actions = {
 		const fd = await event.request.formData();
 		const projectId = fd.get('projectId');
 		if (typeof projectId !== 'string') return fail(400);
-		markProjectCompleted(projectId);
+		await markProjectCompleted(projectId);
 		return { success: true };
 	}
 };

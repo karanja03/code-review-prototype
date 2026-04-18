@@ -2,7 +2,7 @@ import { lucia } from '$lib/server/auth';
 import { getDb } from '$lib/server/db';
 import { user } from '$lib/server/db/schema';
 import { isValidEmail, normalizeEmail } from '$lib/server/email';
-import { countSubmitters, ensureActiveProjectForSubmitter } from '$lib/server/review-workspace';
+import { ensureActiveProjectForSubmitter } from '$lib/server/review-workspace';
 import { isSignUpRole, type SignUpRole } from '$lib/userRole';
 import { fail, redirect } from '@sveltejs/kit';
 import { hash } from '@node-rs/argon2';
@@ -43,12 +43,11 @@ export const actions: Actions = {
 
 		const username = usernameRaw.toLowerCase();
 		const db = getDb();
-		const clash = db
+		const clash = await db
 			.select()
 			.from(user)
 			.where(or(eq(user.username, username), eq(user.email, email)))
-			.limit(1)
-			.all();
+			.limit(1);
 		if (clash.length > 0) {
 			const row = clash[0];
 			const msg =
@@ -66,10 +65,10 @@ export const actions: Actions = {
 			parallelism: 1
 		});
 
-		db.insert(user).values({ id: userId, username, email, password_hash: passwordHash, role }).run();
+		await db.insert(user).values({ id: userId, username, email, password_hash: passwordHash, role });
 
 		if (role === 'submitter') {
-			ensureActiveProjectForSubmitter(userId);
+			await ensureActiveProjectForSubmitter(userId);
 		}
 
 		const session = await lucia.createSession(userId, {});
