@@ -2,8 +2,6 @@ import { lucia } from '$lib/server/auth';
 import { initDatabase } from '$lib/server/db';
 import type { Handle } from '@sveltejs/kit';
 
-export const runtime = 'nodejs';
-
 export const handle: Handle = async ({ event, resolve }) => {
 	await initDatabase();
 	const sessionId = event.cookies.get(lucia.sessionCookieName);

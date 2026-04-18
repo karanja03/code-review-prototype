@@ -7,8 +7,6 @@ import {
 import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 
-export const runtime = 'nodejs';
-
 export const load: PageServerLoad = async () => {
 	const users = await listUsersForAdmin();
 	const projects = await listProjectsWithSubmittersForAdmin();

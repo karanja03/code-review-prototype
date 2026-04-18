@@ -10,8 +10,6 @@ import { eq, or } from 'drizzle-orm';
 import { generateIdFromEntropySize } from 'lucia';
 import type { Actions } from './$types';
 
-export const runtime = 'nodejs';
-
 export const actions: Actions = {
 	default: async (event) => {
 		const formData = await event.request.formData();
