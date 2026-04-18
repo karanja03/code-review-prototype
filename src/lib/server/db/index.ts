@@ -7,6 +7,42 @@ import { fetch as undiciFetch } from 'undici';
 import { env } from '$env/dynamic/private';
 import * as schema from './schema';
 
+/** Hrana calls `fetch(request)` with a `cross-fetch` Request; Undici needs `fetch(url, init)`. */
+function fetchForLibsql(input: unknown, init?: RequestInit): Promise<Response> {
+	if (
+		init === undefined &&
+		typeof input === 'object' &&
+		input !== null &&
+		typeof (input as { url?: unknown }).url === 'string'
+	) {
+		const r = input as Request;
+		const next: RequestInit = {
+			method: r.method,
+			headers: copyHeadersForUndici(r.headers),
+			body: r.body
+		};
+		const sig = (r as { signal?: AbortSignal }).signal;
+		if (sig) next.signal = sig;
+		if (next.body !== undefined && next.body !== null && isReadableStream(next.body)) {
+			(next as { duplex?: 'half' }).duplex = 'half';
+		}
+		return undiciFetch(r.url, next as never) as unknown as Promise<Response>;
+	}
+	return undiciFetch(input as never, init as never) as unknown as Promise<Response>;
+}
+
+function isReadableStream(x: unknown): boolean {
+	return typeof ReadableStream !== 'undefined' && x instanceof ReadableStream;
+}
+
+function copyHeadersForUndici(src: Headers): Headers {
+	const dst = new Headers();
+	src.forEach((value, key) => {
+		dst.append(key, value);
+	});
+	return dst;
+}
+
 export type AppDatabase = LibSQLDatabase<typeof schema>;
 
 type LibsqlGlobal = typeof globalThis & {
@@ -50,11 +86,12 @@ function usesRemoteLibsql(url: string): boolean {
 function createLibsqlClient(url: string): Client {
 	ensureFileDatabaseDirectory(url);
 	// Vercel replaces global `fetch` with a Response whose body often lacks `.cancel()`, which breaks
-	// @libsql/hrana-client error handling (see stream.js `resp.body?.cancel`). Undici matches WHATWG streams.
+	// @libsql/hrana-client error handling (see stream.js `resp.body?.cancel`). Undici matches WHATWG streams,
+	// but hrana passes a cross-fetch `Request`, so we unwrap to `url` + `init` before calling Undici.
 	return createClient({
 		url,
 		authToken: env.TURSO_AUTH_TOKEN || undefined,
-		...(usesRemoteLibsql(url) ? { fetch: undiciFetch as Function } : {})
+		...(usesRemoteLibsql(url) ? { fetch: fetchForLibsql as Function } : {})
 	});
 }
 
