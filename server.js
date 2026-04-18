@@ -1,3 +1,7 @@
+/**
+ * Custom Node server with Socket.IO. Requires `@sveltejs/adapter-node` and `vite build`
+ * producing `./build/handler.js`. For Vercel use `@sveltejs/adapter-vercel` and `npm start` / `vite preview` instead.
+ */
 import http from 'node:http';
 import process from 'node:process';
 import { handler } from './build/handler.js';

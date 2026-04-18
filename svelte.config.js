@@ -1,4 +1,4 @@
-import adapter from '@sveltejs/adapter-node';
+import adapter from '@sveltejs/adapter-vercel';
 import { dirname, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -18,7 +18,8 @@ const config = {
 		}
 	},
 	kit: {
-		adapter: adapter()
+		// Node serverless on Vercel: Turso client, @node-rs/argon2, Lucia need this (not Edge).
+		adapter: adapter({ runtime: 'nodejs20.x' })
 	}
 };
 
