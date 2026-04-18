@@ -50,7 +50,8 @@ type LibsqlGlobal = typeof globalThis & {
 };
 
 function resolveDatabaseUrl(): string {
-	const raw = (env.TURSO_DATABASE_URL ?? env.DATABASE_URL)?.trim();
+	// Use || so an empty TURSO_DATABASE_URL in Vercel does not block DATABASE_URL (?? only skips null/undefined).
+	const raw = (env.TURSO_DATABASE_URL?.trim() || env.DATABASE_URL?.trim()) ?? '';
 	if (!raw) {
 		throw new Error(
 			'[db] Set TURSO_DATABASE_URL (Turso / libSQL) or DATABASE_URL. Examples: libsql://your-db.turso.io, file:./data/local.db'
@@ -68,7 +69,7 @@ function ensureFileDatabaseDirectory(url: string) {
 }
 
 function connectionKey(url: string): string {
-	const token = env.TURSO_AUTH_TOKEN ?? '';
+	const token = env.TURSO_AUTH_TOKEN?.trim() || '';
 	return `${url}\0${token}`;
 }
 
@@ -90,7 +91,7 @@ function createLibsqlClient(url: string): Client {
 	// but hrana passes a cross-fetch `Request`, so we unwrap to `url` + `init` before calling Undici.
 	return createClient({
 		url,
-		authToken: env.TURSO_AUTH_TOKEN || undefined,
+		authToken: env.TURSO_AUTH_TOKEN?.trim() || undefined,
 		...(usesRemoteLibsql(url) ? { fetch: fetchForLibsql as Function } : {})
 	});
 }
@@ -151,9 +152,20 @@ export function initDatabase(): Promise<void> {
 		initOnce = (async () => {
 			const url = resolveDatabaseUrl();
 			const db = getDb();
-			const rows = await db.all(
-				sql`SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'user' LIMIT 1`
-			);
+			let rows: Awaited<ReturnType<AppDatabase['all']>>;
+			try {
+				rows = await db.all(
+					sql`SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'user' LIMIT 1`
+				);
+			} catch (e) {
+				const msg = e instanceof Error ? e.message : String(e);
+				if (msg.includes('404') && usesRemoteLibsql(url)) {
+					throw new Error(
+						'[db] Turso HTTP 404: URL or token does not match any database (wrong env, revoked token, or deleted DB). Not caused by an empty schema—Turso still returns 200 for an empty DB; you would then get a "no tables" error instead. Set Vercel Production TURSO_DATABASE_URL + TURSO_AUTH_TOKEN from Turso → Connect. Then from your laptop: DATABASE_URL=<libsql url> TURSO_AUTH_TOKEN=<token> npm run db:push'
+					);
+				}
+				throw e;
+			}
 			if (!rows.length) {
 				const hint = url.startsWith('file:/data/')
 					? ' On Fly.io with a mounted volume, open a shell on the machine and run: `cd /app && DATABASE_URL=/data/app.db npx drizzle-kit push` (release VMs do not see your volume).'
