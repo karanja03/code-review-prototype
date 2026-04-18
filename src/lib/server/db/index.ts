@@ -97,13 +97,17 @@ let initOnce: Promise<void> | undefined;
 export function initDatabase(): Promise<void> {
 	if (!initOnce) {
 		initOnce = (async () => {
+			const url = resolveDatabaseUrl();
 			const db = getDb();
 			const rows = await db.all(
 				sql`SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'user' LIMIT 1`
 			);
 			if (!rows.length) {
+				const hint = url.startsWith('file:/data/')
+					? ' On Fly.io with a mounted volume, open a shell on the machine and run: `cd /app && DATABASE_URL=/data/app.db npx drizzle-kit push` (release VMs do not see your volume).'
+					: '';
 				throw new Error(
-					'[db] Database has no tables yet. Apply the schema with `npm run db:push` (Turso) or reset a local file DB, set env, then start again.'
+					`[db] Database has no tables yet. Run \`npm run db:push\` for this DATABASE_URL (local file or Turso), then restart.${hint}`
 				);
 			}
 		})();
