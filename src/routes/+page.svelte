@@ -18,7 +18,7 @@
 	import ReviewProgressSave from '$lib/features/workspace/ReviewProgressSave.svelte';
 	import WorkspaceStrip from '$lib/features/workspace/WorkspaceStrip.svelte';
 	import ProjectBriefing from '$lib/features/briefing/ProjectBriefing.svelte';
-	import ReviewerBriefingWait from '$lib/features/briefing/ReviewerBriefingWait.svelte';
+	import ReviewerWaitForAssignment from '$lib/features/briefing/ReviewerWaitForAssignment.svelte';
 	import CodeReviewView from '$lib/features/code-review/CodeReviewView.svelte';
 	import AcceptView from '$lib/features/project-flow/AcceptView.svelte';
 	import Feedback360View from '$lib/features/project-flow/Feedback360View.svelte';
@@ -37,6 +37,11 @@
 	const auth = getContext<{ sessionUser: SessionUser | null }>(AUTH_SESSION);
 
 	let { data } = $props();
+
+	/** No server-side pair yet — only a generic wait message (no category preview). */
+	const reviewerAwaitingAssignment = $derived(
+		data.workspace.kind === 'reviewer' && !data.workspace.pair
+	);
 
 	const reviewSaveContext = $derived.by(() => {
 		const w = data.workspace;
@@ -146,20 +151,26 @@
 </svelte:head>
 
 <PrototypePageShell>
-	<WorkspaceStrip workspace={data.workspace} />
+	{#if !reviewerAwaitingAssignment}
+		<WorkspaceStrip workspace={data.workspace} />
+	{/if}
 	{#if reviewSaveContext}
 		<ReviewProgressSave
 			project={reviewSaveContext.project}
 			canMarkComplete={reviewSaveContext.canMarkComplete}
 		/>
 	{/if}
-	{#if app.phase === 'briefing'}
+	{#if reviewerAwaitingAssignment}
+		<ReviewerWaitForAssignment />
+	{:else if app.phase === 'briefing'}
 		{#if app.role === 'sandra'}
 			<ProjectBriefing />
+		{:else if reviewerGate && data.workspace.kind === 'reviewer' && data.workspace.pair}
+			<ReviewerAssignmentPanel />
 		{:else}
-			<ReviewerBriefingWait />
+			<p class="text-sm text-kood-muted">Loading workspace…</p>
 		{/if}
-	{:else if reviewerGate}
+	{:else if reviewerGate && data.workspace.kind === 'reviewer' && data.workspace.pair}
 		<ReviewerAssignmentPanel />
 	{:else if app.phase === 'project_completion'}
 		<ProjectCompletionView workspace={data.workspace} />
