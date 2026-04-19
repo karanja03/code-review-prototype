@@ -15,7 +15,7 @@
 		adminDashboardActive = false
 	}: {
 		children: Snippet;
-		variant?: 'workspace' | 'admin';
+		variant?: 'workspace' | 'admin' | 'auth';
 		/** When `variant="admin"`, pass true on `/admin` so “Dashboard” shows as current. */
 		adminDashboardActive?: boolean;
 	} = $props();
@@ -43,6 +43,20 @@
 			: 'block rounded px-1.5 py-1 text-kood-muted hover:text-kood-text';
 </script>
 
+{#if variant === 'auth'}
+	<!-- Sign-in / sign-up only: no curriculum chrome or workspace landing panels -->
+	<div class="min-h-screen bg-kood-bg text-kood-text">
+		<div class="flex min-h-screen flex-col">
+			<header class="shrink-0 border-b border-kood-border px-4 py-5 lg:px-10">
+				<p class="font-mono text-lg font-semibold tracking-tight text-kood-text">//kood</p>
+				<p class="mt-0.5 text-[10px] uppercase tracking-wider text-kood-muted/70">Prototype UI</p>
+			</header>
+			<main class="flex flex-1 flex-col justify-center px-4 py-10 lg:px-10">
+				{@render children()}
+			</main>
+		</div>
+	</div>
+{:else}
 <div class="min-h-screen bg-kood-bg text-kood-text">
 	<div class="mx-auto flex min-h-screen max-w-[1700px] flex-col lg:flex-row">
 		<aside
@@ -222,3 +236,4 @@
 		{/if}
 	</div>
 </div>
+{/if}

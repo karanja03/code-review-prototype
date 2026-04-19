@@ -10,7 +10,7 @@
 	<title>Sign up — //kood prototype</title>
 </svelte:head>
 
-<PrototypePageShell>
+<PrototypePageShell variant="auth">
 	<div class="mx-auto max-w-md">
 		<section class="rounded-xl border border-kood-accent/30 bg-kood-surface/80 p-5 lg:p-6">
 			<h1 class="font-mono text-xl font-semibold tracking-tight text-kood-text">Create an account</h1>
