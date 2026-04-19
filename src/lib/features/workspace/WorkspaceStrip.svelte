@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { getApp } from '$lib/appState.svelte';
 
 	type Proj = { id: string; status: string; giteaUrl: string | null };
 	type RP = { projectId: string };
@@ -34,11 +35,21 @@
 
 	let { workspace }: { workspace: Workspace } = $props();
 
+	const app = getApp();
+
 	const submitter = $derived(workspace.kind === 'submitter' ? workspace : null);
 	const reviewer = $derived(workspace.kind === 'reviewer' ? workspace : null);
+
+	/** Hide the submitter batch card until they've started the journey (briefing → Start). Repo URL only makes sense after that. */
+	const showSubmitterStrip = $derived.by(() => {
+		const s = submitter;
+		if (!s) return false;
+		if (s.project.status !== 'awaiting_link') return true;
+		return app.projectStarted;
+	});
 </script>
 
-{#if submitter}
+{#if submitter && showSubmitterStrip}
 	<section class="mb-6 rounded-xl border border-kood-accent/30 bg-kood-surface/80 p-4 text-sm">
 		<h3 class="font-semibold text-kood-text">Your project batch</h3>
 		<p class="mt-1 text-xs text-kood-muted">Status: <span class="text-kood-accent">{submitter.project.status}</span></p>
