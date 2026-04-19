@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
-	import { invalidateAll } from '$app/navigation';
 	import { getContext } from 'svelte';
-	import { io } from 'socket.io-client';
+	import { realtimeClientLog } from '$lib/realtimeDebug';
+	import { getRealtimeSocket } from '$lib/socket';
 	import { setActiveCollaboration } from '$lib/collaborationContext';
 	import {
 		getApp,
@@ -65,16 +65,17 @@
 			return () => setActiveCollaboration(null);
 		}
 		setActiveCollaboration({ projectId: p.id, userId: w.viewerId });
-		const socket = io(window.location.origin, { path: '/socket.io', withCredentials: true });
-		socket.emit('joinProject', p.id);
-		const onInvalidate = () => {
-			void invalidateAll();
+		const socket = getRealtimeSocket();
+		const projectId = p.id;
+		const joinProjectRoom = () => {
+			realtimeClientLog('emit joinProject', projectId.slice(0, 8) + '…');
+			socket?.emit('joinProject', projectId);
 		};
-		socket.on('review:invalidate', onInvalidate);
+		socket?.on('connect', joinProjectRoom);
+		joinProjectRoom();
 		return () => {
-			socket.emit('leaveProject', p.id);
-			socket.off('review:invalidate', onInvalidate);
-			socket.disconnect();
+			socket?.off('connect', joinProjectRoom);
+			socket?.emit('leaveProject', projectId);
 			setActiveCollaboration(null);
 		};
 	});

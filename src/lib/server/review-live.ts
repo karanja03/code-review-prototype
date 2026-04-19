@@ -3,7 +3,7 @@ import { createFullTestingItems, withMandatoryOwners } from '$lib/features/testi
 import type { CategorySession, TestingDecision, TestingItem } from '$lib/types';
 import { and, eq } from 'drizzle-orm';
 import { generateIdFromEntropySize } from 'lucia';
-import { broadcastToProject } from '../../../socket-setup.mjs';
+import { broadcastToProject, broadcastToRole, broadcastToUser } from '../../../socket-setup.mjs';
 import { getDb } from './db';
 import {
 	codeReviewObservationProgress,
@@ -35,7 +35,38 @@ export const SUBMISSION_PROGRESS_VALUES = [
 export type SubmissionProgress = (typeof SUBMISSION_PROGRESS_VALUES)[number];
 
 export function notifyProjectReviewUpdate(projectId: string) {
+	console.info('[realtime-server] notifyProjectReviewUpdate', projectId.slice(0, 8) + '…');
 	broadcastToProject(projectId, 'review:invalidate', { projectId });
+	void dispatchWorkspaceInvalidateForProject(projectId);
+}
+
+/** Submitter + assigned reviewers (user rooms) so people who are not in a project socket room still refetch. */
+async function dispatchWorkspaceInvalidateForProject(projectId: string) {
+	const p = await getProjectById(projectId);
+	if (!p) {
+		console.warn('[realtime-server] dispatchWorkspaceInvalidateForProject: no project', projectId);
+		return;
+	}
+	const pair = await getPairForProject(projectId);
+	const ids = new Set([p.submitterId]);
+	if (pair) {
+		ids.add(pair.reviewerAId);
+		ids.add(pair.reviewerBId);
+	}
+	console.info(
+		'[realtime-server] workspace:invalidate → user rooms',
+		ids.size,
+		Array.from(ids).map((id) => id.slice(0, 8) + '…')
+	);
+	for (const id of ids) {
+		broadcastToUser(id, 'workspace:invalidate', { projectId });
+	}
+}
+
+/** Call when any project list or global admin state may have changed. */
+export function notifyAdminDashboard() {
+	console.info('[realtime-server] notifyAdminDashboard');
+	broadcastToRole('admin', 'workspace:invalidate', {});
 }
 
 async function testingMandatoryAllAccepted(projectId: string): Promise<boolean> {

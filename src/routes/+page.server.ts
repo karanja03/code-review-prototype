@@ -2,6 +2,7 @@ import { lucia } from '$lib/server/auth';
 import {
 	appendCodeReviewMessageLive,
 	appendTestingMessageLive,
+	notifyAdminDashboard,
 	notifyProjectReviewUpdate,
 	recomputeAndPersistSubmissionProgress,
 	refreshProjectReviewSnapshotsFromRelational,
@@ -104,6 +105,8 @@ export const actions: Actions = {
 		}
 		const res = await submitProjectRepoUrl(projectId, u.id, url);
 		if (!res.ok) return fail(400, { message: res.error });
+		notifyProjectReviewUpdate(projectId);
+		notifyAdminDashboard();
 		throw redirect(303, '/');
 	},
 	startNextBatch: async (event) => {
@@ -111,6 +114,8 @@ export const actions: Actions = {
 		if (!u || u.role !== 'submitter') return fail(403);
 		const res = await startNextProjectBatch(u.id);
 		if (!res.ok) return fail(400, { message: res.error });
+		notifyProjectReviewUpdate(res.projectId);
+		notifyAdminDashboard();
 		throw redirect(303, '/');
 	},
 	saveReviewState: async (event) => {
@@ -275,6 +280,7 @@ export const actions: Actions = {
 		if (!isSubmitter && !isAdmin) return fail(403);
 		await markProjectCompleted(projectId);
 		notifyProjectReviewUpdate(projectId);
+		notifyAdminDashboard();
 		throw redirect(303, '/');
 	}
 };

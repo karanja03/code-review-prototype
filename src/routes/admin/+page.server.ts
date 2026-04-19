@@ -1,3 +1,4 @@
+import { notifyAdminDashboard, notifyProjectReviewUpdate } from '$lib/server/review-live';
 import {
 	assignReviewPair,
 	listProjectsWithSubmittersForAdmin,
@@ -35,6 +36,8 @@ export const actions: Actions = {
 			adminId: admin.id
 		});
 		if (!res.ok) return fail(400, { message: res.error });
+		notifyProjectReviewUpdate(projectId);
+		notifyAdminDashboard();
 		return { success: true };
 	},
 	markComplete: async (event) => {
@@ -44,6 +47,8 @@ export const actions: Actions = {
 		const projectId = fd.get('projectId');
 		if (typeof projectId !== 'string') return fail(400);
 		await markProjectCompleted(projectId);
+		notifyProjectReviewUpdate(projectId);
+		notifyAdminDashboard();
 		return { success: true };
 	}
 };
