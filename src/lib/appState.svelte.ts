@@ -391,7 +391,7 @@ export function confirmStartProject() {
 	data.projectStarted = true;
 	data.phase = 'project_completion';
 	data.reviewerAssignmentAccepted = { jane: false, joe: false };
-	pushToast('Project started — complete the brief, then submit for review.');
+	pushToast('Project started — complete the brief, then add your repo URL in Your project batch when ready.');
 }
 
 export function acceptReviewerAssignment(reviewer: 'jane' | 'joe') {
@@ -404,14 +404,6 @@ export function reviewerNeedsAssignmentGate(role: Role): boolean {
 	if (data.reviewerAssignmentAccepted.jane && data.reviewerAssignmentAccepted.joe) return false;
 	if (!data.projectStarted) return false;
 	return !data.reviewerAssignmentAccepted[role];
-}
-
-export function confirmSubmitForReview() {
-	data.submittedForReview = true;
-	data.phase = 'testing';
-	const a = getPersonaDisplayLabel('jane');
-	const b = getPersonaDisplayLabel('joe');
-	pushToast(`Reviewers assigned: ${a} & ${b}. Testing phase unlocked.`);
 }
 
 export function setTestingVerdict(itemId: string, reviewer: 'jane' | 'joe', verdict: TestingDecision) {

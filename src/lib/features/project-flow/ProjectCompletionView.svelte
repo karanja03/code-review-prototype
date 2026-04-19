@@ -1,49 +1,34 @@
 <script lang="ts">
-	import { confirmSubmitForReview, getPersonaDisplayLabel } from '$lib/appState.svelte';
-	import { MESSENGER_REPO } from '$lib/koodUi';
-	import Modal from '$lib/ui/Modal.svelte';
+	type SubmitterWorkspace = {
+		kind: 'submitter';
+		project: { status: string };
+	};
 
-	let reviewOpen = $state(false);
+	let { workspace }: { workspace: SubmitterWorkspace | { kind: string } } = $props();
 
-	const reviewerPairLine = $derived(
-		`${getPersonaDisplayLabel('jane')} & ${getPersonaDisplayLabel('joe')}`
-	);
+	const submitter = $derived(workspace.kind === 'submitter' ? (workspace as SubmitterWorkspace) : null);
+	const status = $derived(submitter?.project.status ?? '');
 </script>
 
-<div class="space-y-4">
+<div class="max-w-xl space-y-4">
 	<h2 class="text-xl font-semibold text-kood-text">Project completion · Mobile Messenger</h2>
-	<p class="text-sm text-kood-muted">
-		Finish the Flutter messenger per the brief. When you're ready, submit for review — reviewers will be assigned
-		({reviewerPairLine} in this demo).
-	</p>
-	<div class="rounded-xl border border-kood-border bg-kood-surface p-4 text-sm text-kood-text/90">
-		<p class="text-xs font-semibold uppercase tracking-wide text-kood-muted">Repository for this project</p>
-		<a class="mt-1 block break-all text-kood-accent hover:underline" href={MESSENGER_REPO}>{MESSENGER_REPO}</a>
-	</div>
-	<button
-		type="button"
-		class="w-full max-w-md rounded-xl border-2 border-kood-accent/70 bg-kood-surface-raised py-4 text-sm font-bold text-kood-accent hover:bg-kood-surface"
-		onclick={() => (reviewOpen = true)}>Submit for review</button
-	>
-</div>
 
-<Modal bind:open={reviewOpen} title="Are you ready?">
-	<p>
-		This action will assign real people to review your task (in the prototype, shown as {reviewerPairLine}).
-	</p>
-	{#snippet footer()}
-		<button
-			type="button"
-			class="rounded-lg border border-kood-border px-4 py-2 text-sm text-kood-text"
-			onclick={() => (reviewOpen = false)}>Cancel</button
-		>
-		<button
-			type="button"
-			class="rounded-lg bg-kood-accent px-4 py-2 text-sm font-semibold text-kood-accent-foreground"
-			onclick={() => {
-				confirmSubmitForReview();
-				reviewOpen = false;
-			}}>Yes</button
-		>
-	{/snippet}
-</Modal>
+	{#if !submitter}
+		<p class="text-sm text-kood-muted">This step is for the submitter account.</p>
+	{:else if status === 'awaiting_link'}
+		<p class="text-sm text-kood-muted">
+			Finish the Flutter messenger per the brief, then add your Gitea repository URL in
+			<strong class="text-kood-text/90">Your project batch</strong> at the top of the page. The next phase opens
+			only after that link is saved and reviewers have been assigned.
+		</p>
+	{:else if status === 'repo_submitted'}
+		<p class="text-sm text-kood-muted">
+			Your repository link has been received. Please wait while an administrator assigns reviewers to your project.
+			The testing phase will appear here automatically when reviewers are paired and the review begins.
+		</p>
+	{:else if status === 'review_active' || status === 'completed'}
+		<p class="text-sm text-kood-muted">Loading the next step…</p>
+	{:else}
+		<p class="text-sm text-kood-muted">Please wait…</p>
+	{/if}
+</div>

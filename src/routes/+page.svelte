@@ -162,7 +162,7 @@
 	{:else if reviewerGate}
 		<ReviewerAssignmentPanel />
 	{:else if app.phase === 'project_completion'}
-		<ProjectCompletionView />
+		<ProjectCompletionView workspace={data.workspace} />
 	{:else if app.phase === 'testing'}
 		<TestingView />
 	{:else if app.phase === 'code_review'}
