@@ -1,16 +1,18 @@
 <script lang="ts">
-	import { confirmSubmitForReview } from '$lib/appState.svelte';
+	import { assignedNameForSlot, confirmSubmitForReview } from '$lib/appState.svelte';
 	import { MESSENGER_REPO } from '$lib/koodUi';
 	import Modal from '$lib/ui/Modal.svelte';
 
 	let reviewOpen = $state(false);
+	const reviewer1Name = $derived(assignedNameForSlot('reviewer1') || 'Reviewer 1');
+	const reviewer2Name = $derived(assignedNameForSlot('reviewer2') || 'Reviewer 2');
 </script>
 
 <div class="space-y-4">
 	<h2 class="text-xl font-semibold text-kood-text">Project completion · Mobile Messenger</h2>
 	<p class="text-sm text-kood-muted">
 		Finish the Flutter messenger per the brief. When you're ready, submit for review — reviewers will be assigned
-		(You & Joe in this demo).
+		({reviewer1Name} and {reviewer2Name}).
 	</p>
 	<div class="rounded-xl border border-kood-border bg-kood-surface p-4 text-sm text-kood-text/90">
 		<p class="text-xs font-semibold uppercase tracking-wide text-kood-muted">Repository for this project</p>
@@ -24,7 +26,7 @@
 </div>
 
 <Modal bind:open={reviewOpen} title="Are you ready?">
-	<p>This action will assign real people to review your task (mocked as you and Joe).</p>
+	<p>This action will assign your task to {reviewer1Name} and {reviewer2Name} for review.</p>
 	{#snippet footer()}
 		<button
 			type="button"

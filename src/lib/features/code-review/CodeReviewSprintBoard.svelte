@@ -8,6 +8,7 @@
 		codeReviewOwnerAccepted,
 		codeReviewOwnedResolvedCount,
 		codeReviewProgressForReviewer,
+		displayNameForRole,
 		getApp,
 		goToStandup,
 		sandraStartNewCodeReviewRound
@@ -19,6 +20,8 @@
 	type CategoryPage = { category: CategoryDef; entries: CodeReviewListEntry[] };
 
 	const app = getApp();
+	const reviewer1Name = $derived(displayNameForRole('jane'));
+	const reviewer2Name = $derived(displayNameForRole('joe'));
 	const isReviewer = $derived(app.role === 'jane' || app.role === 'joe');
 	const isSandra = $derived(app.role === 'sandra');
 
@@ -65,15 +68,15 @@
 	const joeCategoryCount = $derived(CATEGORIES.filter((c) => c.assignee === 'joe').length);
 
 	const tabJaneOwnedLabel = $derived(
-		app.role === 'jane' ? 'Your checks' : app.role === 'joe' ? 'Your checks' : 'Reviewer 1'
+		app.role === 'jane' ? 'Your checks' : app.role === 'joe' ? 'Your checks' : reviewer1Name
 	);
-	const tabJoeOwnedLabel = 'Joe’s checks';
+	const tabJoeOwnedLabel = $derived(`${reviewer2Name}'s checks`);
 	const codeReviewCategoryBlurb = $derived(
 		app.role === 'jane'
-			? `You ${janeCategoryCount} categories · Joe ${joeCategoryCount} categories`
+			? `You ${janeCategoryCount} categories · ${reviewer2Name} ${joeCategoryCount} categories`
 			: app.role === 'joe'
-				? `Your ${janeCategoryCount} categories · Joe ${joeCategoryCount} categories`
-				: `Reviewer 1: ${janeCategoryCount} · Joe: ${joeCategoryCount}`
+				? `${reviewer1Name} ${janeCategoryCount} categories · Your ${joeCategoryCount} categories`
+				: `${reviewer1Name}: ${janeCategoryCount} · ${reviewer2Name}: ${joeCategoryCount}`
 	);
 
 	const janeAcceptPct = $derived(
@@ -128,13 +131,13 @@
 		<h2 class="text-xl font-semibold text-kood-text">Sprint · category observations</h2>
 		<p class="mt-1 text-sm text-kood-muted">
 			{#if app.role === 'joe'}
-				You own Performance and Structure &amp; architecture; the other reviewer owns Security and Correctness. Only the
+				You own Performance and Structure &amp; architecture; {reviewer1Name} owns Security and Correctness. Only the
 				assignee Accepts/Declines; the peer reads along and can use the thread.
 			{:else if app.role === 'sandra'}
-				Reviewer 1 (You) owns Security and Correctness; Joe owns Performance and Structure &amp; architecture. Only the
+				{reviewer1Name} owns Security and Correctness; {reviewer2Name} owns Performance and Structure &amp; architecture. Only the
 				assignee Accepts/Declines; the peer reads along and can use the thread.
 			{:else}
-				You own Security and Correctness; Joe owns Performance and Structure &amp; architecture. Only the assignee
+				You own Security and Correctness; {reviewer2Name} owns Performance and Structure &amp; architecture. Only the assignee
 				Accepts/Declines; the peer reads along and can use the thread.
 			{/if}
 		</p>
@@ -179,13 +182,13 @@
 		<div class="mt-4 grid gap-4 sm:grid-cols-2">
 			<div>
 				<div class="flex items-center justify-between text-xs">
-					<span class="font-medium text-kood-text">Your bucket</span>
+					<span class="font-medium text-kood-text">{reviewer1Name}'s bucket</span>
 					<span class="text-kood-muted">{janeProg.resolved}/{janeProg.owned}</span>
 				</div>
 				<div
 					class="mt-1.5 flex h-2.5 w-full overflow-hidden rounded-full bg-kood-bg ring-1 ring-kood-border/60"
 					role="img"
-					aria-label="Your observations: {janeProg.accepted} accepted, {janeProg.declined} declined"
+					aria-label="{reviewer1Name}'s observations: {janeProg.accepted} accepted, {janeProg.declined} declined"
 				>
 					<div class="h-full bg-kood-accent/55 transition-[width] duration-300" style="width: {janeAcceptPct}%"></div>
 					<div class="h-full bg-red-500/50 transition-[width] duration-300" style="width: {janeDeclinePct}%"></div>
@@ -193,13 +196,13 @@
 			</div>
 			<div>
 				<div class="flex items-center justify-between text-xs">
-					<span class="font-medium text-kood-text">Joe’s bucket</span>
+					<span class="font-medium text-kood-text">{reviewer2Name}'s bucket</span>
 					<span class="text-kood-muted">{joeProg.resolved}/{joeProg.owned}</span>
 				</div>
 				<div
 					class="mt-1.5 flex h-2.5 w-full overflow-hidden rounded-full bg-kood-bg ring-1 ring-kood-border/60"
 					role="img"
-					aria-label="Joe’s observations: {joeProg.accepted} accepted, {joeProg.declined} declined"
+					aria-label="{reviewer2Name}'s observations: {joeProg.accepted} accepted, {joeProg.declined} declined"
 				>
 					<div class="h-full bg-kood-accent/55 transition-[width] duration-300" style="width: {joeAcceptPct}%"></div>
 					<div class="h-full bg-red-500/50 transition-[width] duration-300" style="width: {joeDeclinePct}%"></div>
@@ -249,10 +252,10 @@
 		>
 			{#if app.role === 'jane'}
 				<strong class="text-kood-text">You:</strong> Accept/Decline only on rows in your tab. Use <strong
-					class="text-kood-text/90">{tabJoeOwnedLabel}</strong> to see Joe’s scope (read-only verdicts; you can still
+					class="text-kood-text/90">{tabJoeOwnedLabel}</strong> to see {reviewer2Name}'s scope (read-only verdicts; you can still
 				comment).
 			{:else}
-				<strong class="text-kood-text">Joe:</strong> <strong class="text-kood-text/90">{tabJoeOwnedLabel}</strong> is your
+				<strong class="text-kood-text">{reviewer2Name}:</strong> <strong class="text-kood-text/90">{tabJoeOwnedLabel}</strong> is your
 				completed observations (read-only verdicts here). <strong class="text-kood-text/90">{tabJaneOwnedLabel}</strong> is
 				your peer’s live scope — read-only verdicts; you can still comment.
 			{/if}
@@ -352,7 +355,15 @@
 						<p class="mt-1 text-xs text-kood-muted">
 							{currentGroup.entries.length}
 							{currentGroup.entries.length === 1 ? 'observation' : 'observations'} · assigned to
-							<strong class="text-kood-text/90">{currentGroup.category.assignee === 'jane' ? 'You' : 'Joe'}</strong>
+							<strong class="text-kood-text/90"
+								>{currentGroup.category.assignee === 'jane'
+									? app.role === 'jane'
+										? 'You'
+										: reviewer1Name
+									: app.role === 'joe'
+										? 'You'
+										: reviewer2Name}</strong
+							>
 						</p>
 					</div>
 					<a
@@ -403,7 +414,7 @@
 
 	{#if !allCategoriesComplete()}
 		<p class="text-xs text-amber-400/90">
-			Every observation must be <strong class="text-amber-200">Accepted by its assignee</strong> (you or Joe). Use
+			Every observation must be <strong class="text-amber-200">Accepted by its assignee</strong> ({reviewer1Name} or {reviewer2Name}). Use
 			tabs and category pages so nothing is missed.
 		</p>
 	{/if}

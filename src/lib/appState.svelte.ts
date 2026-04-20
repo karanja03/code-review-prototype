@@ -2,7 +2,7 @@ import { browser } from '$app/environment';
 import { seedCategorySessionsForJoeDemo, seedTestingItemsForYouJoeDemo } from '$lib/demo/youJoeDemoSeed';
 import { createFullTestingItems } from '$lib/features/testing/checklist';
 import { MESSENGER_REPO } from '$lib/koodUi';
-import { CATEGORIES, emptyChecks, emptyDraftComments, ACADEMY_BASE } from './constants';
+import { CATEGORIES, ACADEMY_BASE, emptyObservationRowsForCategory } from './constants';
 import type {
 	AdminSlot,
 	CategorySession,
@@ -10,7 +10,6 @@ import type {
 	CodeReviewObservationRowState,
 	Phase,
 	RegisteredUser,
-	ReviewIterationRecord,
 	Role,
 	SandraRating,
 	ReviewerRatingSet,
@@ -377,6 +376,7 @@ function createSnapshotFromData(): Snapshot {
 		phase: data.phase,
 		projectStarted: data.projectStarted,
 		submittedForReview: data.submittedForReview,
+		codeReviewRound: data.codeReviewRound,
 		testingRound: data.testingRound,
 		testingItems: data.testingItems,
 		categorySessions: data.categorySessions,
@@ -479,6 +479,12 @@ export const ADMIN_SLOT_OPTIONS: { id: AdminSlot; label: string }[] = [
 
 export function assignedNameForSlot(slot: AdminSlot): string {
 	return data.registeredUsers.find((x) => x.assignedSlot === slot)?.name ?? '';
+}
+
+export function displayNameForRole(role: Role): string {
+	if (role === 'sandra') return assignedNameForSlot('submitter') || 'Submitter';
+	if (role === 'jane') return assignedNameForSlot('reviewer1') || 'Reviewer 1';
+	return assignedNameForSlot('reviewer2') || 'Reviewer 2';
 }
 
 export function assignedSlotForCurrentUser(): AdminSlot | null {
@@ -589,7 +595,7 @@ export async function persistAppStateToServer() {
 export function confirmStartProject() {
 	data.projectStarted = true;
 	data.phase = 'project_completion';
-	data.reviewerAssignmentAccepted = { jane: false, joe: true };
+	data.reviewerAssignmentAccepted = { jane: false, joe: false };
 	pushToast('Project started — complete the brief, then submit for review.');
 	void persistAppStateToServer();
 }
@@ -602,7 +608,6 @@ export function acceptReviewerAssignment(reviewer: 'jane' | 'joe') {
 export function reviewerNeedsAssignmentGate(role: Role): boolean {
 	if (role !== 'jane' && role !== 'joe') return false;
 	if (!data.projectStarted) return false;
-	if (role === 'joe') return false;
 	return !data.reviewerAssignmentAccepted[role];
 }
 
@@ -614,7 +619,9 @@ export function confirmSubmitForReview() {
 		at: new Date().toISOString(),
 		repo: MESSENGER_REPO
 	};
-	pushToast('Reviewers assigned: Jane & Joe. Testing phase unlocked.');
+	const r1 = assignedNameForSlot('reviewer1') || 'Reviewer 1';
+	const r2 = assignedNameForSlot('reviewer2') || 'Reviewer 2';
+	pushToast(`Reviewers assigned: ${r1} and ${r2}. Testing phase unlocked.`);
 	void persistAppStateToServer();
 }
 

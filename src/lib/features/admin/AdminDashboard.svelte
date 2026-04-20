@@ -55,13 +55,15 @@ const debugState = $derived(adminDebugState());
 	}> {
 		return Object.values(app.categorySessions)
 			.flatMap((session) =>
-				session.iterations.map((it) => ({
-					id: it.id,
-					at: it.at,
-					categoryId: session.categoryId,
-					reviewer: it.reviewer,
-					action: it.action
-				}))
+				Object.values(session.observationRows).flatMap((row) =>
+					row.verdictHistory.map((entry) => ({
+						id: `${session.categoryId}-${entry.round}-${entry.jane}-${entry.joe}`,
+						at: new Date().toISOString(),
+						categoryId: session.categoryId,
+						reviewer: entry.jane !== 'pending' ? 'reviewer1' : 'reviewer2',
+						action: `round ${entry.round} verdict update`
+					}))
+				)
 			)
 			.sort((a, b) => b.at.localeCompare(a.at))
 			.slice(0, limit);
@@ -362,7 +364,6 @@ const debugState = $derived(adminDebugState());
 											<th class="px-3 py-2 font-medium">Role</th>
 											<th class="px-3 py-2 font-medium">Person</th>
 											<th class="px-3 py-2 font-medium">Assigned at</th>
-											<th class="px-3 py-2 font-medium">Assigned by</th>
 										</tr>
 									</thead>
 									<tbody>
@@ -371,7 +372,6 @@ const debugState = $derived(adminDebugState());
 												<td class="px-3 py-2 text-kood-text">{row.slotLabel}</td>
 												<td class="px-3 py-2 text-kood-muted">{row.name || 'Unassigned'}</td>
 												<td class="px-3 py-2 text-kood-muted">{row.assignedAt ? formatWhen(row.assignedAt) : '-'}</td>
-												<td class="px-3 py-2 text-kood-muted">{row.assignedBy || '-'}</td>
 											</tr>
 										{/each}
 									</tbody>
