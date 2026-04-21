@@ -24,14 +24,14 @@ const T12 = '2026-03-13T14:00:00.000Z';
 const T13 = '2026-03-14T10:00:00.000Z';
 const T14 = '2026-03-14T10:45:00.000Z';
 
-/** Joe’s bucket: all accepted; m19 + m20 show Joe declining then Sandra fixing until accept. You (Jane) still has work. */
+/** Joe’s bucket: all accepted; m9 + m10 show Joe declining then Sandra fixing until accept. You (Jane) still has work. */
 export function seedTestingItemsForYouJoeDemo(items: TestingItem[]): TestingItem[] {
 	return items.map((item) => {
 		if (item.section !== 'mandatory' || !item.mandatoryOwner) {
 			return { ...item };
 		}
 		if (item.mandatoryOwner === 'joe') {
-			if (item.id === 'm19') {
+			if (item.id === 'm9') {
 				const verdictHistory: TestingVerdictSnapshot[] = [
 					{ round: 1, jane: 'pending', joe: 'decline' },
 					{ round: 2, jane: 'pending', joe: 'decline' },
@@ -39,42 +39,42 @@ export function seedTestingItemsForYouJoeDemo(items: TestingItem[]): TestingItem
 				];
 				const comments: TestingComment[] = [
 					{
-						id: 'seed-m19-1',
+						id: 'seed-m9-1',
 						round: 1,
 						author: 'joe',
 						text: 'Declined: archiving a chat removes it from the list, but after a cold start it reappears as if never archived. That breaks the “archive” story in the brief.',
 						at: T9
 					},
 					{
-						id: 'seed-m19-2',
+						id: 'seed-m9-2',
 						round: 1,
 						author: 'sandra',
 						text: 'Reproduced — we were only hiding archived threads in memory. Persisted archived ids in local store + sync on launch. Build 39.',
 						at: T10
 					},
 					{
-						id: 'seed-m19-3',
+						id: 'seed-m9-3',
 						round: 2,
 						author: 'joe',
 						text: 'Better. Unarchive still leaves the thread pinned to the old sort position until I navigate away — looks like stale list state.',
 						at: T11
 					},
 					{
-						id: 'seed-m19-4',
+						id: 'seed-m9-4',
 						round: 2,
 						author: 'sandra',
 						text: 'Fixed: unarchive now triggers a full list refresh + re-sort by last activity. Added a widget test for the ordering.',
 						at: T12
 					},
 					{
-						id: 'seed-m19-5',
+						id: 'seed-m9-5',
 						round: 3,
 						author: 'joe',
 						text: 'Checked cold start, kill app, and multi-device — archive/unarchive behaves. Accepting.',
 						at: T13
 					},
 					{
-						id: 'seed-m19-6',
+						id: 'seed-m9-6',
 						round: 3,
 						author: 'sandra',
 						text: 'Thanks for sticking with the edge cases — shout if anything regresses.',
@@ -90,7 +90,7 @@ export function seedTestingItemsForYouJoeDemo(items: TestingItem[]): TestingItem
 					drafts: { ...item.drafts }
 				};
 			}
-			if (item.id === 'm20') {
+			if (item.id === 'm10') {
 				const verdictHistory: TestingVerdictSnapshot[] = [
 					{ round: 1, jane: 'pending', joe: 'decline' },
 					{ round: 2, jane: 'pending', joe: 'decline' },
@@ -99,56 +99,56 @@ export function seedTestingItemsForYouJoeDemo(items: TestingItem[]): TestingItem
 				];
 				const comments: TestingComment[] = [
 					{
-						id: 'seed-m20-1',
+						id: 'seed-m10-1',
 						round: 1,
 						author: 'joe',
 						text: 'Declined for now: sent messages don’t show a clear “delivered” state in the UI on slow networks — looks stuck on “sending”. Please align with spec (sent + delivered).',
 						at: T1
 					},
 					{
-						id: 'seed-m20-2',
+						id: 'seed-m10-2',
 						round: 1,
 						author: 'sandra',
 						text: 'Thanks — I reproduced on throttled LTE. Added queued + sent + delivered badges and a timeout toast. Pushed build 42.',
 						at: T2
 					},
 					{
-						id: 'seed-m20-3',
+						id: 'seed-m10-3',
 						round: 2,
 						author: 'joe',
 						text: 'Better, but delivered still flickers when the other user is offline — it briefly shows failed then delivered. Can we stabilise that?',
 						at: T3
 					},
 					{
-						id: 'seed-m20-4',
+						id: 'seed-m10-4',
 						round: 2,
 						author: 'sandra',
 						text: 'Fixed ordering: we now hold “delivered” until ACK, no intermediate failure flash. Screenshots in thread on Discord.',
 						at: T4
 					},
 					{
-						id: 'seed-m20-5',
+						id: 'seed-m10-5',
 						round: 3,
 						author: 'joe',
 						text: 'One more edge case: editing a message after send resets the delivery tick — looks like a new message. Should keep continuity.',
 						at: T5
 					},
 					{
-						id: 'seed-m20-6',
+						id: 'seed-m10-6',
 						round: 3,
 						author: 'sandra',
 						text: 'Good catch. Edits now preserve message id for delivery state; added regression test. Build 44.',
 						at: T6
 					},
 					{
-						id: 'seed-m20-7',
+						id: 'seed-m10-7',
 						round: 4,
 						author: 'joe',
 						text: 'Verified on two devices + airplane-mode toggles. Accepting — nice work.',
 						at: T7
 					},
 					{
-						id: 'seed-m20-8',
+						id: 'seed-m10-8',
 						round: 4,
 						author: 'sandra',
 						text: 'Appreciate the thorough pass. Shout if anything regresses in the next round.',

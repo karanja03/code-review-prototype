@@ -65,6 +65,7 @@ export function createFullTestingItems(): TestingItem[] {
 			'mandatory',
 			'Authentication persistence unless explicit logout or session expiry — verify by closing and reopening the app; user stays logged in.'
 		),
+		/* Prototype: 5 mandatory rows per reviewer (m1–m5 → Jane, m6–m10 → Joe). Rest commented for easier testing:
 		row(
 			'm11',
 			'mandatory',
@@ -109,6 +110,7 @@ export function createFullTestingItems(): TestingItem[] {
 			'mandatory',
 			'On errors/exceptions, messenger returns to last stable state when possible; user receives visual feedback about the error.'
 		),
+		*/
 		row(
 			'e1',
 			'extra',
