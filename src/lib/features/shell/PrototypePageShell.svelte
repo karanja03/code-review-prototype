@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { getContext } from 'svelte';
+	import { page } from '$app/stores';
 	import { AUTH_SESSION, type SessionUser } from '$lib/auth-context';
 	import CurriculumLeftNav from './CurriculumLeftNav.svelte';
 	import KoodRightChrome from './KoodRightChrome.svelte';
@@ -20,6 +21,26 @@
 	} = $props();
 
 	const auth = getContext<{ sessionUser: SessionUser | null }>(AUTH_SESSION);
+
+	type AdminProjectRow = { id: string; themeTitle: string; status: string; submitterUsername: string };
+	const getAdminProjects = getContext<undefined | (() => AdminProjectRow[])>('kood-admin-projects');
+	const adminProjects = $derived(getAdminProjects?.() ?? []);
+	const adminPath = $derived($page.url.pathname);
+	const adminProjectMatch = $derived(adminPath.match(/^\/admin\/projects\/([^/]+)/));
+	const adminOpenProjectId = $derived(adminProjectMatch?.[1] ?? null);
+
+	function adminProjectLinkActive(href: string): boolean {
+		const n = (s: string) => {
+			const t = s.replace(/\/$/, '');
+			return t === '' ? '/' : t;
+		};
+		return n(adminPath) === n(href);
+	}
+
+	const subLink = (active: boolean) =>
+		active
+			? 'block rounded px-1.5 py-1 bg-kood-accent/15 text-kood-text'
+			: 'block rounded px-1.5 py-1 text-kood-muted hover:text-kood-text';
 </script>
 
 <div class="min-h-screen bg-kood-bg text-kood-text">
@@ -49,6 +70,68 @@
 							: 'text-kood-muted hover:bg-kood-surface-raised/80 hover:text-kood-text'}"
 						>Dashboard</a
 					>
+
+					{#if adminProjects.length > 0}
+						<p class="mb-2 mt-5 text-xs font-semibold uppercase tracking-wide text-kood-muted">Projects</p>
+						<ul class="space-y-1">
+							{#each adminProjects as p (p.id)}
+								<li>
+									<details class="group" open={p.id === adminOpenProjectId}>
+										<summary
+											class="cursor-pointer list-none rounded-lg px-2 py-2 marker:content-none text-kood-muted transition hover:bg-kood-surface-raised/80 hover:text-kood-text [&::-webkit-details-marker]:hidden"
+										>
+											<span class="block truncate text-xs font-medium text-kood-text/95">{p.themeTitle}</span>
+											<span class="block text-[10px] text-kood-muted"
+												>{p.status} · {p.submitterUsername}</span
+											>
+										</summary>
+										<ul class="mt-1 space-y-0.5 border-l border-kood-border/60 pl-3 text-[11px]">
+											<li>
+												<a href="/admin/projects/{p.id}" class={subLink(adminProjectLinkActive(`/admin/projects/${p.id}`))}
+													>Overview</a
+												>
+											</li>
+											<li>
+												<a
+													href="/admin/projects/{p.id}/testing-verdict"
+													class={subLink(adminProjectLinkActive(`/admin/projects/${p.id}/testing-verdict`))}
+													>Testing verdicts</a
+												>
+											</li>
+											<li>
+												<a
+													href="/admin/projects/{p.id}/testing-threads"
+													class={subLink(adminProjectLinkActive(`/admin/projects/${p.id}/testing-threads`))}
+													>Testing threads</a
+												>
+											</li>
+											<li>
+												<a
+													href="/admin/projects/{p.id}/code-review-verdict"
+													class={subLink(adminProjectLinkActive(`/admin/projects/${p.id}/code-review-verdict`))}
+													>Code review verdicts</a
+												>
+											</li>
+											<li>
+												<a
+													href="/admin/projects/{p.id}/code-review-threads"
+													class={subLink(adminProjectLinkActive(`/admin/projects/${p.id}/code-review-threads`))}
+													>Code review threads</a
+												>
+											</li>
+											<li>
+												<a
+													href="/admin/projects/{p.id}/raw-json"
+													class={subLink(adminProjectLinkActive(`/admin/projects/${p.id}/raw-json`))}
+													>Raw JSON</a
+												>
+											</li>
+										</ul>
+									</details>
+								</li>
+							{/each}
+						</ul>
+					{/if}
 				</nav>
 
 				<div class="min-h-0 flex-1" aria-hidden="true"></div>

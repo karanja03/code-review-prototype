@@ -6,8 +6,7 @@
 		goToCodeReview,
 		mandatoryItems,
 		mandatoryOwnedResolvedCount,
-		mandatoryProgressForReviewer,
-		sandraStartNewTestingRound
+		mandatoryProgressForReviewer
 	} from '$lib/appState.svelte';
 	import TestingItemCard from './TestingItemCard.svelte';
 
@@ -233,8 +232,7 @@
 			class="rounded-lg border border-kood-border bg-kood-surface px-4 py-3 text-sm text-kood-text/90"
 			role="status"
 		>
-			<strong class="text-kood-text">Submitter:</strong> read-only verdicts; expand a row for the full thread. Use
-			<strong class="text-kood-text">Start new testing round</strong> after fixes.
+			<strong class="text-kood-text">Submitter:</strong> read-only verdicts; expand a row for the full thread.
 		</div>
 	{:else if isReviewer}
 		<div
@@ -293,19 +291,6 @@
 			{/each}
 		</div>
 	</section>
-
-	{#if isSandra}
-		<div class="flex flex-wrap gap-3 rounded-lg border border-kood-border bg-kood-surface p-4">
-			<button
-				type="button"
-				class="rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-2 text-sm font-medium text-amber-200/90 hover:bg-amber-500/15"
-				onclick={() => sandraStartNewTestingRound()}>Start new testing round</button
-			>
-			<p class="text-xs text-kood-muted">
-				Archives current verdicts per row and bumps the round; comments stay in the thread.
-			</p>
-		</div>
-	{/if}
 
 	<div class="rounded-lg border border-kood-border bg-kood-surface p-4 text-sm text-kood-muted">
 		<p class="text-xs uppercase tracking-wide text-kood-muted/80">Submitted</p>
