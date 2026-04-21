@@ -1,5 +1,4 @@
 import { CATEGORIES } from '$lib/constants';
-import { parseStandupSnapshotFromCodeReviewJson } from '$lib/server/code-review-payload';
 import {
 	auditCodeReviewThreads,
 	auditTestingThreads,
@@ -51,19 +50,19 @@ function relabelThreadEntries(
 
 export const load: LayoutServerLoad = async ({ params, parent }) => {
 	await parent();
-	const projectRow = getProjectById(params.projectId);
+	const projectRow = await getProjectById(params.projectId);
 	if (!projectRow) error(404, 'Not found');
-	const pair = getPairForProject(params.projectId);
+	const pair = await getPairForProject(params.projectId);
 
-	const tp = listTestingItemProgressForProject(params.projectId);
-	const tm = listTestingThreadMessagesForProject(params.projectId);
-	const cp = listCodeReviewObservationProgressForProject(params.projectId);
-	const cm = listCodeReviewThreadMessagesForProject(params.projectId);
+	const tp = await listTestingItemProgressForProject(params.projectId);
+	const tm = await listTestingThreadMessagesForProject(params.projectId);
+	const cp = await listCodeReviewObservationProgressForProject(params.projectId);
+	const cm = await listCodeReviewThreadMessagesForProject(params.projectId);
 
 	const room = pair
-		? reviewRoomDisplayLabels(projectRow.submitterId, pair)
+		? await reviewRoomDisplayLabels(projectRow.submitterId, pair)
 		: {
-				submitterUsername: userPublicRow(projectRow.submitterId)?.username ?? 'Submitter',
+				submitterUsername: (await userPublicRow(projectRow.submitterId))?.username ?? 'Submitter',
 				reviewerAUsername: 'Reviewer A (not paired)',
 				reviewerBUsername: 'Reviewer B (not paired)'
 			};
@@ -118,7 +117,6 @@ export const load: LayoutServerLoad = async ({ params, parent }) => {
 		testingItemProgress: tp,
 		codeReviewObservationProgress: cp,
 		testingThreadGroups,
-		codeReviewThreadGroups,
-		standupSnapshot: parseStandupSnapshotFromCodeReviewJson(projectRow.codeReviewJson ?? null)
+		codeReviewThreadGroups
 	};
 };
