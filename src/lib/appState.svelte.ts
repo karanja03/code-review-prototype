@@ -274,6 +274,34 @@ export function getPersonaDisplayLabel(persona: 'sandra' | 'jane' | 'joe'): stri
 	return 'Sandra';
 }
 
+/**
+ * Label for reviewer A/B slots in discussion guides and standup.
+ * When a live review room is loaded: always the real usernames (reviewer A / reviewer B), never "Jane"/"Joe".
+ * Offline prototype: "You" for your slot, otherwise neutral "Reviewer A" / "Reviewer B" (not fictional names).
+ */
+export function reviewerSlotDisplayLabel(slot: 'jane' | 'joe'): string {
+	const m = workspaceDisplayNames;
+	if (m) return m[slot];
+	if (data.role === slot) return 'You';
+	return slot === 'jane' ? 'Reviewer A' : 'Reviewer B';
+}
+
+/** "your categories" vs "Alex's categories" for standup checklist copy. */
+export function reviewerCategoriesPossessivePhrase(slot: 'jane' | 'joe'): string {
+	if (data.role === slot) return 'your categories';
+	const m = workspaceDisplayNames;
+	if (m) return `${m[slot]}'s categories`;
+	return `${reviewerSlotDisplayLabel(slot)}'s categories`;
+}
+
+/** Submitter name in guides; real username from room when set. */
+export function submitterDiscussionLabel(): string {
+	const m = workspaceDisplayNames;
+	if (m) return m.sandra;
+	if (data.role === 'sandra') return 'You';
+	return 'Sandra';
+}
+
 /** Server has paired reviewers on an active project — skip prototype briefing / assignment gates. */
 export function syncLiveReviewWorkspaceFromServer(workspace: {
 	kind: string;

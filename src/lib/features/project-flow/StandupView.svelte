@@ -1,15 +1,22 @@
 <script lang="ts">
-	import { completeStandup, getApp, getPersonaDisplayLabel, toggleStandup } from '$lib/appState.svelte';
+	import {
+		completeStandup,
+		getApp,
+		reviewerCategoriesPossessivePhrase,
+		reviewerSlotDisplayLabel,
+		submitterDiscussionLabel,
+		toggleStandup
+	} from '$lib/appState.svelte';
 
 	const app = getApp();
 
-	const janeName = $derived(getPersonaDisplayLabel('jane'));
-	const joeName = $derived(getPersonaDisplayLabel('joe'));
-	const sandraName = $derived(getPersonaDisplayLabel('sandra'));
+	const slotJane = $derived(reviewerSlotDisplayLabel('jane'));
+	const slotJoe = $derived(reviewerSlotDisplayLabel('joe'));
+	const submitterName = $derived(submitterDiscussionLabel());
 
 	const agenda = $derived([
 		'Scheduled the ~45 min sync and shared time / voice channel with the team.',
-		`Followed the structure: ${janeName}’s categories → ${joeName}’s → cross-review → ${sandraName} → shared actions.`,
+		`Followed the structure: ${reviewerCategoriesPossessivePhrase('jane')} → ${reviewerCategoriesPossessivePhrase('joe')} → cross-review → ${submitterName} → shared actions.`,
 		'Captured takeaways below (what was discussed, key feedback, action items, reflections).',
 		'Confirmed everyone had space to speak; notes are specific enough to use later.',
 		'Agreed what “done” means for this review before moving to Accept project.'
@@ -59,19 +66,19 @@
 		</p>
 		<ol class="mt-4 list-decimal space-y-3 pl-5 text-sm text-kood-text/90">
 			<li>
-				<strong class="text-kood-text">You</strong> — Security &amp; correctness: findings, feedback, fixes.
+				<strong class="text-kood-text">{slotJane}</strong> — Security &amp; correctness: findings, feedback, fixes.
 			</li>
 			<li>
-				<strong class="text-kood-text">Joe</strong> — Performance &amp; structure &amp; architecture: findings, feedback,
-				fixes.
+				<strong class="text-kood-text">{slotJoe}</strong> — Performance &amp; structure &amp; architecture: findings,
+				feedback, fixes.
 			</li>
 			<li>
 				<strong class="text-kood-text">Cross-review</strong> — How each reviewer engaged with the other’s focus
 				areas (concrete examples).
 			</li>
 			<li>
-				<strong class="text-kood-text">{sandraName}</strong> — Submitter perspective: what changed, what is still risky,
-				what you need from reviewers before sign-off.
+				<strong class="text-kood-text">{submitterName}</strong> — Submitter perspective: what changed, what is still
+				risky, what you need from reviewers before sign-off.
 			</li>
 			<li>
 				<strong class="text-kood-text">Everyone</strong> — Action items, academy follow-ups, and alignment on
@@ -109,7 +116,7 @@
 				<li class="flex items-start gap-3 rounded-xl border border-kood-border bg-kood-bg/40 p-4">
 					<input
 						type="checkbox"
-						class="mt-1 h-4 w-4 shrink-0 rounded border-kood-border bg-kood-surface-raised text-kood-accent focus:ring-kood-accent"
+						class="mt-1 h-4 w-4 shrink-0 rounded border border-kood-border bg-kood-surface-raised text-kood-accent focus:ring-kood-accent"
 						checked={app.standupItems[i]}
 						onchange={() => toggleStandup(i)}
 					/>

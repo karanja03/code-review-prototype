@@ -1,12 +1,20 @@
 <script lang="ts">
-	import { allCategoriesComplete, getPersonaDisplayLabel, trainingBlurbFor } from '$lib/appState.svelte';
+	import {
+		allCategoriesComplete,
+		getPersonaDisplayLabel,
+		reviewerSlotDisplayLabel,
+		submitterDiscussionLabel,
+		trainingBlurbFor
+	} from '$lib/appState.svelte';
 	import Accordion from '$lib/ui/Accordion.svelte';
 	import CodeReview7Day from './CodeReview7Day.svelte';
 	import CodeReviewSprintBoard from './CodeReviewSprintBoard.svelte';
 
-	const jName = $derived(getPersonaDisplayLabel('jane'));
-	const oName = $derived(getPersonaDisplayLabel('joe'));
-	const sandraName = $derived(getPersonaDisplayLabel('sandra'));
+	const slotJane = $derived(reviewerSlotDisplayLabel('jane'));
+	const slotJoe = $derived(reviewerSlotDisplayLabel('joe'));
+	/** Third-person name for running text (never a misleading “You” for the submitter). */
+	const submitterName = $derived(getPersonaDisplayLabel('sandra'));
+	const submitterRoster = $derived(submitterDiscussionLabel());
 </script>
 
 <div class="space-y-6">
@@ -43,7 +51,7 @@
 			</li>
 			<li>
 				<strong class="text-kood-text/90">Prepare</strong> individually before the call. Align on who already
-				looked at which parts of the repo (here: {jName} → Security &amp; Correctness, {oName} → Performance &amp;
+				looked at which parts of the repo (here: {slotJane} → Security &amp; Correctness, {slotJoe} → Performance &amp;
 				Structure &amp; architecture).
 			</li>
 			<li>
@@ -53,21 +61,21 @@
 		</ol>
 	</section>
 
-	<Accordion title="What to discuss on the call (structure)" badge="Post-sprint" defaultOpen={false}>
+	<Accordion title="Discussion guide (on the call)" badge="Post-sprint" defaultOpen={false}>
 		<p class="text-kood-muted">
 			Use this order so the conversation stays fair and complete. It mirrors how work was split in this sprint.
 		</p>
 		<ol class="mt-4 list-decimal space-y-4 pl-5 text-sm text-kood-text/90">
 			<li>
-				<strong class="text-kood-text">{jName} — assigned categories</strong>
+				<strong class="text-kood-text">{slotJane} — assigned categories</strong>
 				<span class="text-kood-muted"> (Security, Correctness)</span>
 				<p class="mt-1 text-kood-muted">
-					Walk through main findings, feedback sent to {sandraName}, and what changed since. Peers ask clarifying
+					Walk through main findings, feedback sent to {submitterName}, and what changed since. Peers ask clarifying
 					questions only — you own the narrative for your scope.
 				</p>
 			</li>
 			<li>
-				<strong class="text-kood-text">{oName} — assigned categories</strong>
+				<strong class="text-kood-text">{slotJoe} — assigned categories</strong>
 				<span class="text-kood-muted"> (Performance, Structure &amp; architecture)</span>
 				<p class="mt-1 text-kood-muted">
 					Same pattern: outcomes, trade-offs, anything still fuzzy. Keep cross-talk light until step 3.
@@ -81,7 +89,7 @@
 				</p>
 			</li>
 			<li>
-				<strong class="text-kood-text">{sandraName} (submitter)</strong>
+				<strong class="text-kood-text">{submitterRoster} (submitter)</strong>
 				<p class="mt-1 text-kood-muted">
 					How you responded to feedback, what was hard to fix, and what you would still like reviewers to sanity-check.
 					Agree on any remaining risk or follow-up demos.
@@ -99,7 +107,7 @@
 
 	<div class="rounded-lg border border-kood-border bg-kood-bg/50 px-4 py-3 text-xs text-kood-muted">
 		<strong class="text-kood-text/90">Async vs live:</strong> The sprint board below matches the Testing flow
-		(Accept/Decline, threads, {jName} vs {oName} tabs). The structured call lives in
+		(Accept/Decline, threads, {slotJane} vs {slotJoe} tabs). The structured call lives in
 		<strong class="text-kood-text/90">Standup (post-sprint)</strong> once every observation is accepted.
 	</div>
 
@@ -116,7 +124,7 @@
 
 	<details class="rounded-xl border border-kood-border bg-kood-surface p-4 text-sm text-kood-muted">
 		<summary class="cursor-pointer text-kood-text/90">
-			Reviewer training hints (from {sandraName}'s future ratings)
+			Reviewer training hints (from {submitterName}'s future ratings)
 		</summary>
 		<p class="mt-2">{trainingBlurbFor('jane')}</p>
 		<p class="mt-1">{trainingBlurbFor('joe')}</p>
