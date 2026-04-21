@@ -23,14 +23,6 @@ export const CATEGORIES: CategoryDef[] = [
 			{
 				id: 's3',
 				text: 'Authorization checks — Users only reach what they should; watch missing permission checks and access-by-ID gaps.'
-			},
-			{
-				id: 's4',
-				text: 'Sensitive data protection — No hardcoded secrets or sensitive values in logs; store and handle credentials safely.'
-			},
-			{
-				id: 's5',
-				text: 'Dependency vulnerabilities — Third-party libraries are maintained and not knowingly risky or unnecessary.'
 			}
 		]
 	},
@@ -53,14 +45,6 @@ export const CATEGORIES: CategoryDef[] = [
 			{
 				id: 'cr3',
 				text: 'Input validation — External inputs are checked for type, range, format, and missing values where it matters.'
-			},
-			{
-				id: 'cr4',
-				text: 'Data integrity — Updates and transactions keep related data consistent without partial or inconsistent states.'
-			},
-			{
-				id: 'cr5',
-				text: 'Logical correctness — Conditions, operators, algorithms, and loops match the intended behaviour.'
 			}
 		]
 	},
@@ -83,14 +67,6 @@ export const CATEGORIES: CategoryDef[] = [
 			{
 				id: 'p3',
 				text: 'Memory efficiency — Avoid loading huge datasets into memory when pagination, streaming, or filtering is enough.'
-			},
-			{
-				id: 'p4',
-				text: 'I/O efficiency — Reuse or batch APIs, files, and network calls instead of repeating identical work in tight loops.'
-			},
-			{
-				id: 'p5',
-				text: 'Caching usage — Do not recompute or refetch the same expensive result when a small cache or reuse is clearly better.'
 			}
 		]
 	},
@@ -113,14 +89,6 @@ export const CATEGORIES: CategoryDef[] = [
 			{
 				id: 'st3',
 				text: 'Dependency management — Coupling, import fan-in, and circular dependencies stay under control.'
-			},
-			{
-				id: 'st4',
-				text: 'Layer boundaries — Logic stays in the layer it belongs to, without leaking DB or transport details upward.'
-			},
-			{
-				id: 'st5',
-				text: 'Code cohesion — Each module keeps closely related responsibilities instead of unrelated grab-bags.'
 			}
 		]
 	}
