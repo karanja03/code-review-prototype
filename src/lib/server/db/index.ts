@@ -4,6 +4,7 @@ import { drizzle, type LibSQLDatabase } from 'drizzle-orm/libsql';
 import { mkdirSync } from 'node:fs';
 import { dirname, isAbsolute, resolve } from 'node:path';
 import { fetch as undiciFetch } from 'undici';
+import { building } from '$app/environment';
 import { env } from '$env/dynamic/private';
 import * as schema from './schema';
 
@@ -45,55 +46,23 @@ function copyHeadersForUndici(src: Headers): Headers {
 
 export type AppDatabase = LibSQLDatabase<typeof schema>;
 
-type LibsqlGlobal = typeof globalThis & {
-	__koodLibsql?: { key: string; client: Client; db: AppDatabase };
+type SqliteGlobal = typeof globalThis & {
+	__koodSqlite?: { path: string; sqlite: Database.Database; db: DrizzleDb };
+	__koodBuildDb?: DrizzleDb;
 };
 
-function resolveDatabaseUrl(): string {
-	// Use || so an empty TURSO_DATABASE_URL in Vercel does not block DATABASE_URL (?? only skips null/undefined).
-	const raw = (env.TURSO_DATABASE_URL?.trim() || env.DATABASE_URL?.trim()) ?? '';
-	if (!raw) {
-		throw new Error(
-			'[db] Set TURSO_DATABASE_URL (Turso / libSQL) or DATABASE_URL. Examples: libsql://your-db.turso.io, file:./data/local.db'
-		);
-	}
-	if (raw.startsWith('file:') || /^\w+:\/\//.test(raw)) return raw;
-	return `file:${raw}`;
+/** In-memory DB used only while SvelteKit runs static analysis (`vite build`); no migrations, no disk. */
+function getBuildPlaceholderDb(): DrizzleDb {
+	const g = globalThis as SqliteGlobal;
+	if (g.__koodBuildDb) return g.__koodBuildDb;
+	const sqlite = new Database(':memory:');
+	sqlite.pragma('foreign_keys = ON');
+	g.__koodBuildDb = drizzle(sqlite, { schema });
+	return g.__koodBuildDb;
 }
 
-function ensureFileDatabaseDirectory(url: string) {
-	if (!url.startsWith('file:')) return;
-	const pathPart = url.slice('file:'.length);
-	const abs = isAbsolute(pathPart) ? pathPart : resolve(process.cwd(), pathPart);
-	mkdirSync(dirname(abs), { recursive: true });
-}
-
-function connectionKey(url: string): string {
-	const token = env.TURSO_AUTH_TOKEN?.trim() || '';
-	return `${url}\0${token}`;
-}
-
-function usesRemoteLibsql(url: string): boolean {
-	const u = url.toLowerCase();
-	return (
-		u.startsWith('libsql:') ||
-		u.startsWith('http:') ||
-		u.startsWith('https:') ||
-		u.startsWith('ws:') ||
-		u.startsWith('wss:')
-	);
-}
-
-function createLibsqlClient(url: string): Client {
-	ensureFileDatabaseDirectory(url);
-	// Vercel replaces global `fetch` with a Response whose body often lacks `.cancel()`, which breaks
-	// @libsql/hrana-client error handling (see stream.js `resp.body?.cancel`). Undici matches WHATWG streams,
-	// but hrana passes a cross-fetch `Request`, so we unwrap to `url` + `init` before calling Undici.
-	return createClient({
-		url,
-		authToken: env.TURSO_AUTH_TOKEN?.trim() || undefined,
-		...(usesRemoteLibsql(url) ? { fetch: fetchForLibsql as Function } : {})
-	});
+function databasePath(): string {
+	return env.DATABASE_URL ?? './data/local.db';
 }
 
 /** Survives Vite SSR HMR so we do not open/close the client on every module reload. */
@@ -121,9 +90,11 @@ let moduleClient: Client | undefined;
 let moduleDb: AppDatabase | undefined;
 let moduleKey: string | undefined;
 
-export function getDb(): AppDatabase {
-	const url = resolveDatabaseUrl();
-	const key = connectionKey(url);
+export function getDb() {
+	if (building) {
+		return getBuildPlaceholderDb();
+	}
+	const url = databasePath();
 	const useGlobalCache = process.env.NODE_ENV !== 'production';
 	if (useGlobalCache) {
 		return getOrCreateFromGlobal(url);
