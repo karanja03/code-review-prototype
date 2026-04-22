@@ -24,7 +24,7 @@
 		"db:push:c": "DATABASE_URL=./data/local-c.db drizzle-kit push",
 		"db:nuke": "rm -f data/local.db data/local.db-shm data/local.db-wal && npm run db:push",
 		"db:studio": "node scripts/check-node-drizzle-push.mjs && drizzle-kit studio",
-		"postinstall": "patch-package",
+		"postinstall": "patch-package && node scripts/postinstall-sqlite.mjs",
 		"prepare": "svelte-kit sync || echo ''",
 		"postinstall": "node scripts/postinstall-sqlite.mjs",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
