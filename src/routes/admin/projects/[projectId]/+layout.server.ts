@@ -1,4 +1,5 @@
 import { CATEGORIES } from '$lib/constants';
+import { parseStandupSnapshotFromCodeReviewJson } from '$lib/server/code-review-payload';
 import {
 	auditCodeReviewThreads,
 	auditTestingThreads,
@@ -117,6 +118,7 @@ export const load: LayoutServerLoad = async ({ params, parent }) => {
 		testingItemProgress: tp,
 		codeReviewObservationProgress: cp,
 		testingThreadGroups,
-		codeReviewThreadGroups
+		codeReviewThreadGroups,
+		standupSnapshot: parseStandupSnapshotFromCodeReviewJson(projectRow.codeReviewJson ?? null)
 	};
 };

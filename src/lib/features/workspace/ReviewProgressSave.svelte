@@ -35,8 +35,9 @@
 			<p class="mt-1 max-w-xl text-xs text-kood-muted">
 				The threads under <strong class="text-kood-text/90">Testing</strong> and
 				<strong class="text-kood-text/90">Code review</strong> (comments, accept/decline, rounds) live in the prototype
-				UI. Use this to push your current copy to the database so the submitter, both reviewers, and admins see the
-				same saved state.
+				UI. Standup details (meeting time, voice channel, takeaways, checklist) are included in the code review
+				payload. Use this to push your current copy to the database so the submitter, both reviewers, and admins see
+				the same saved state.
 			</p>
 		</div>
 		{#if showSave}

@@ -25,6 +25,14 @@ export interface TestingComment {
 	at: string;
 }
 
+/** Standup “takeaways thread” — one message per person per post (chat-style, not a shared textarea). */
+export interface StandupTakeawayMessage {
+	id: string;
+	author: 'jane' | 'joe' | 'sandra';
+	text: string;
+	at: string;
+}
+
 export interface TestingItem {
 	id: string;
 	section: 'mandatory' | 'extra';

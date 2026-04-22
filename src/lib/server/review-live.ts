@@ -215,11 +215,20 @@ export function buildCodeReviewSnapshotJson(projectId: string, previousJson: str
 				}));
 		}
 	}
-	return JSON.stringify({
+	let standup: unknown;
+	try {
+		const raw = previousJson ? (JSON.parse(previousJson) as Record<string, unknown>) : null;
+		if (raw?.standup && typeof raw.standup === 'object') standup = raw.standup;
+	} catch {
+		/* ignore */
+	}
+	const payload: Record<string, unknown> = {
 		version: 1 as const,
 		codeReviewRound,
 		categorySessions: sessions
-	});
+	};
+	if (standup !== undefined) payload.standup = standup;
+	return JSON.stringify(payload);
 }
 
 export function refreshProjectReviewSnapshotsFromRelational(projectId: string) {

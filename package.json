@@ -24,7 +24,7 @@
 		"db:studio": "drizzle-kit studio",
 		"db:rebuild-native": "npm run rebuild:sqlite",
 		"prepare": "svelte-kit sync || echo ''",
-		"postinstall": "npm run rebuild:sqlite",
+		"postinstall": "node scripts/postinstall-sqlite.mjs",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch"
 	},

@@ -12,6 +12,7 @@ import type {
 	Role,
 	SandraRating,
 	ReviewerRatingSet,
+	StandupTakeawayMessage,
 	TestingDecision,
 	TestingItem
 } from './types';
@@ -125,6 +126,7 @@ function createDemoSeededSnapshot() {
 		standupWhen: '',
 		standupVoiceChannel: '',
 		standupTakeaways: '',
+		standupTakeawayMessages: [] as StandupTakeawayMessage[],
 		sandraRatings: defaultSandraRatings(),
 		reviewerRatings: defaultReviewerRatings(),
 		xpMock: 0,
@@ -148,6 +150,7 @@ function createLiveInitialSnapshot() {
 		standupWhen: '',
 		standupVoiceChannel: '',
 		standupTakeaways: '',
+		standupTakeawayMessages: [] as StandupTakeawayMessage[],
 		sandraRatings: defaultSandraRatings(),
 		reviewerRatings: defaultReviewerRatings(),
 		xpMock: 0,
@@ -173,6 +176,44 @@ function normalizeStandupItems(parsed: unknown, fallback: boolean[]): boolean[] 
 		next[i] = i < parsed.length ? Boolean(parsed[i]) : false;
 	}
 	return next;
+}
+
+function parseStandupMessageArray(arr: unknown): StandupTakeawayMessage[] {
+	if (!Array.isArray(arr)) return [];
+	const out: StandupTakeawayMessage[] = [];
+	for (const x of arr) {
+		if (!x || typeof x !== 'object') continue;
+		const o = x as Record<string, unknown>;
+		if (o.author !== 'sandra' && o.author !== 'jane' && o.author !== 'joe') continue;
+		if (typeof o.text !== 'string' || !o.text.trim()) continue;
+		out.push({
+			id: typeof o.id === 'string' ? o.id : uid(),
+			author: o.author,
+			text: o.text.slice(0, 2000),
+			at: typeof o.at === 'string' ? o.at : new Date().toISOString()
+		});
+	}
+	return out;
+}
+
+function normalizeStandupTakeawayMessagesFromPartial(
+	messages: unknown,
+	legacyTakeaways: string | undefined,
+	base: StandupTakeawayMessage[]
+): StandupTakeawayMessage[] {
+	const fromArr = parseStandupMessageArray(messages);
+	if (fromArr.length > 0) return fromArr.map((m) => ({ ...m }));
+	if (typeof legacyTakeaways === 'string' && legacyTakeaways.trim()) {
+		return [
+			{
+				id: uid(),
+				author: 'sandra',
+				text: legacyTakeaways.trim().slice(0, 2000),
+				at: new Date().toISOString()
+			}
+		];
+	}
+	return base.length ? base.map((m) => ({ ...m })) : [];
 }
 
 function normalizeReviewerAssignmentAccepted(
@@ -236,8 +277,12 @@ function load(): Snapshot {
 			standupWhen: typeof p.standupWhen === 'string' ? p.standupWhen : base.standupWhen,
 			standupVoiceChannel:
 				typeof p.standupVoiceChannel === 'string' ? p.standupVoiceChannel : base.standupVoiceChannel,
-			standupTakeaways:
-				typeof p.standupTakeaways === 'string' ? p.standupTakeaways : base.standupTakeaways,
+			standupTakeaways: '',
+			standupTakeawayMessages: normalizeStandupTakeawayMessagesFromPartial(
+				p.standupTakeawayMessages,
+				typeof p.standupTakeaways === 'string' ? p.standupTakeaways : undefined,
+				base.standupTakeawayMessages
+			),
 			reviewerAssignmentAccepted: normalizeReviewerAssignmentAccepted(
 				p.reviewerAssignmentAccepted,
 				base.reviewerAssignmentAccepted
@@ -573,16 +618,33 @@ export function exportCategorySessionsForPersistence(): Record<string, CategoryS
 	return JSON.parse(JSON.stringify(data.categorySessions)) as Record<string, CategorySession>;
 }
 
+export type StandupSnapshot = {
+	standupWhen: string;
+	standupVoiceChannel: string;
+	/** @deprecated Migrated into `standupTakeawayMessages`; kept empty for older parsers. */
+	standupTakeaways: string;
+	standupTakeawayMessages: StandupTakeawayMessage[];
+	standupItems: boolean[];
+};
+
 /** Wrapped payload so the DB stores sprint round + sessions (relational sync uses both). */
 export function exportCodeReviewWorkspaceForPersistence(): {
 	version: 1;
 	codeReviewRound: number;
 	categorySessions: Record<string, CategorySession>;
+	standup: StandupSnapshot;
 } {
 	return {
 		version: 1,
 		codeReviewRound: data.codeReviewRound,
-		categorySessions: exportCategorySessionsForPersistence()
+		categorySessions: exportCategorySessionsForPersistence(),
+		standup: {
+			standupWhen: data.standupWhen,
+			standupVoiceChannel: data.standupVoiceChannel,
+			standupTakeaways: '',
+			standupTakeawayMessages: data.standupTakeawayMessages.map((m) => ({ ...m })),
+			standupItems: [...data.standupItems]
+		}
 	};
 }
 
@@ -604,6 +666,49 @@ export function importTestingStateFromServer(patch: unknown) {
 	}
 }
 
+function applyStandupFromServerPayload(st: Record<string, unknown>) {
+	if (typeof st.standupWhen === 'string') data.standupWhen = st.standupWhen;
+	if (typeof st.standupVoiceChannel === 'string') data.standupVoiceChannel = st.standupVoiceChannel;
+	if (Array.isArray(st.standupTakeawayMessages)) {
+		data.standupTakeawayMessages = parseStandupMessageArray(st.standupTakeawayMessages);
+		data.standupTakeaways = '';
+	} else if (typeof st.standupTakeaways === 'string' && st.standupTakeaways.trim()) {
+		data.standupTakeawayMessages = [
+			{
+				id: uid(),
+				author: 'sandra',
+				text: st.standupTakeaways.trim().slice(0, 2000),
+				at: new Date().toISOString()
+			}
+		];
+		data.standupTakeaways = '';
+	}
+	if (Array.isArray(st.standupItems)) {
+		data.standupItems = normalizeStandupItems(st.standupItems, data.standupItems);
+	}
+}
+
+const STANDUP_THREAD_MAX = 80;
+
+/** Append a takeaway bubble as the current persona (submitter or reviewer). */
+export function addStandupTakeawayMessage(text: string) {
+	const r = data.role;
+	if (r !== 'sandra' && r !== 'jane' && r !== 'joe') return;
+	const t = text.trim();
+	if (!t) {
+		pushToast('Write something before posting.');
+		return;
+	}
+	if (data.standupTakeawayMessages.length >= STANDUP_THREAD_MAX) {
+		pushToast('Takeaways thread is full (80 messages max).');
+		return;
+	}
+	data.standupTakeawayMessages = [
+		...data.standupTakeawayMessages,
+		{ id: uid(), author: r, text: t.slice(0, 2000), at: new Date().toISOString() }
+	];
+}
+
 export function importCategorySessionsFromServer(patch: unknown) {
 	if (!patch || typeof patch !== 'object') return;
 	const root = patch as Record<string, unknown>;
@@ -619,6 +724,8 @@ export function importCategorySessionsFromServer(patch: unknown) {
 		data.codeReviewRound = root.codeReviewRound;
 	}
 	data.categorySessions = mergeCategorySessions(initialCategorySessions(), sessions);
+	const su = root.standup;
+	if (su && typeof su === 'object') applyStandupFromServerPayload(su as Record<string, unknown>);
 }
 
 export function setCodeReviewVerdict(
@@ -779,10 +886,15 @@ export function goToStandup() {
 }
 
 export function toggleStandup(i: number) {
+	if (data.role !== 'sandra') return;
 	if (i >= 0 && i < STANDUP_CHECKBOX_COUNT) data.standupItems[i] = !data.standupItems[i];
 }
 
 export function completeStandup() {
+	if (data.role !== 'sandra') {
+		pushToast('Only the submitter (meeting lead) can complete standup.');
+		return;
+	}
 	if (!data.standupItems.every(Boolean)) {
 		pushToast('Check off all standup agenda items to continue.');
 		return;
@@ -884,6 +996,7 @@ export function resetPrototype() {
 	data.standupWhen = fresh.standupWhen;
 	data.standupVoiceChannel = fresh.standupVoiceChannel;
 	data.standupTakeaways = fresh.standupTakeaways;
+	data.standupTakeawayMessages = fresh.standupTakeawayMessages.map((m) => ({ ...m }));
 	data.reviewerAssignmentAccepted = fresh.reviewerAssignmentAccepted;
 	data.sandraRatings = fresh.sandraRatings;
 	data.reviewerRatings = fresh.reviewerRatings;

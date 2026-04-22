@@ -168,7 +168,7 @@
 	{:else if app.phase === 'code_review'}
 		<CodeReviewView />
 	{:else if app.phase === 'standup'}
-		<StandupView />
+		<StandupView project={reviewSaveContext?.project ?? null} />
 	{:else if app.phase === 'accept_project'}
 		<AcceptView />
 	{:else if app.phase === 'feedback_360'}
