@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { ACADEMY_BASE, CATEGORIES } from '$lib/constants';
-	import { academyUrl, acceptReviewerAssignment, getApp } from '$lib/appState.svelte';
+	import { academyUrl, acceptReviewerAssignment, closeAcademyPanel, getApp, openAcademyPanel } from '$lib/appState.svelte';
+	import ReviewAcademyPanel from '../code-review/ReviewAcademyPanel.svelte';
 
 	const app = getApp();
 
@@ -55,12 +56,15 @@
 						<li class="rounded-lg border border-kood-border bg-kood-bg/50 px-3 py-3 text-sm">
 							<p class="font-medium text-kood-text">{c.title}</p>
 							<p class="mt-1 text-xs leading-relaxed text-kood-muted">{c.assignmentBlurb}</p>
-							<a
-								class="mt-2 inline-flex text-xs font-medium text-kood-accent underline-offset-2 hover:underline"
-								href={academyUrl(c.academyHint)}
-								target="_blank"
-								rel="noreferrer">Open in Review Academy →</a
+							<button
+								type="button"
+								class="mt-2 text-xs font-medium text-kood-accent cursor-pointer hover:underline"
+								onclick={() => {
+									openAcademyPanel(c.id);
+								}}
 							>
+								Open in Review Academy →
+							</button>
 						</li>
 					{/each}
 				</ul>
@@ -169,3 +173,8 @@
 		</div>
 	</div>
 </div>
+
+<ReviewAcademyPanel
+	categoryId={app.openedAcademyCategory}
+	onClose={() => closeAcademyPanel()}
+/>

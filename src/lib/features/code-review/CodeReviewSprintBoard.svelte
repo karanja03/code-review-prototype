@@ -10,9 +10,12 @@
 		codeReviewProgressForReviewer,
 		getApp,
 		goToStandup,
-		sandraStartNewCodeReviewRound
+		sandraStartNewCodeReviewRound,
+		openAcademyPanel,
+		closeAcademyPanel
 	} from '$lib/appState.svelte';
 	import CodeReviewItemCard from './CodeReviewItemCard.svelte';
+	import ReviewAcademyPanel from './ReviewAcademyPanel.svelte';
 
 	type Filter = 'jane_owned' | 'joe_owned';
 
@@ -355,12 +358,15 @@
 							<strong class="text-kood-text/90">{currentGroup.category.assignee === 'jane' ? 'You' : 'Joe'}</strong>
 						</p>
 					</div>
-					<a
-						class="shrink-0 text-sm font-medium text-kood-accent underline-offset-2 hover:underline"
-						href={academyUrl(currentGroup.category.academyHint)}
-						target="_blank"
-						rel="noreferrer">Open in review academy</a
+					<button
+						type="button"
+						class="shrink-0 cursor-pointer text-sm font-medium text-kood-accent hover:underline"
+						onclick={() => {
+							openAcademyPanel(currentGroup.category.id);
+						}}
 					>
+						Open in review academy
+					</button>
 				</div>
 				<div class="space-y-2 p-3 sm:p-4">
 					{#each currentGroup.entries as entry (entry.compositeId)}
@@ -408,3 +414,8 @@
 		</p>
 	{/if}
 </div>
+
+<ReviewAcademyPanel
+	categoryId={app.openedAcademyCategory}
+	onClose={() => closeAcademyPanel()}
+/>

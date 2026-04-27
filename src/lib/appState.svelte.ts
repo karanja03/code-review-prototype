@@ -129,7 +129,8 @@ function createInitialSnapshot() {
 		xpMock: 0,
 		leaderboardNote: 'Feedback feeds XP and the leaderboard (mock).',
 		// Joe skips the assignment checkbox in this demo (work is already reflected).
-		reviewerAssignmentAccepted: { jane: false, joe: true }
+		reviewerAssignmentAccepted: { jane: false, joe: true },
+		openedAcademyCategory: null as string | null
 	};
 }
 
@@ -391,6 +392,15 @@ export function goToCodeReview() {
 
 export function academyUrl(hint: string) {
 	return `${ACADEMY_BASE}/${hint}`;
+}
+
+export function openAcademyPanel(categoryId: string) {
+	console.log('openAcademyPanel called with:', categoryId);
+	data.openedAcademyCategory = categoryId;
+}
+
+export function closeAcademyPanel() {
+	data.openedAcademyCategory = null;
 }
 
 function session(catId: string): CategorySession {
