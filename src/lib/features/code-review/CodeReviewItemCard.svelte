@@ -37,6 +37,16 @@
 	const n = $derived(codeReviewReviewerCommentCount(entry.categoryId, entry.observationId));
 	const canSetVerdict = $derived(isReviewer && self && owner === self);
 	const idSafe = $derived(entry.compositeId.replace(/:/g, '-'));
+
+	function personalizeObservationText(text: string): string {
+		if (!isSandra) return text;
+		// Personalize for submitter
+		return text.replace(
+			'Requirement implementation — Behaviour',
+			'Your requirement implementation — what you implemented'
+		);
+	}
+
 </script>
 
 <div
@@ -54,9 +64,9 @@
 				<span class="text-[10px] text-kood-muted/70">R{app.codeReviewRound}</span>
 			</div>
 			{#if open}
-				<p class="mt-1 text-sm leading-relaxed text-kood-text">{entry.observationText}</p>
+				<p class="mt-1 text-sm leading-relaxed text-kood-text">{personalizeObservationText(entry.observationText)}</p>
 			{:else}
-				<p class="mt-1 line-clamp-2 text-sm text-kood-text/90">{entry.observationText}</p>
+				<p class="mt-1 line-clamp-2 text-sm text-kood-text/90">{personalizeObservationText(entry.observationText)}</p>
 			{/if}
 		</div>
 		{#if isSandra || isReviewer}
@@ -97,7 +107,7 @@
 		{#if row[owner] === 'accept' || row[owner] === 'decline'}
 			{#if !canSetVerdict}
 				<span class="rounded px-2 py-0.5 ring-1 {verdictChipClass(row[owner])}"
-					>{verdictLabel(row[owner])}</span
+					>{isSandra ? (row[owner] === 'accept' ? '✓' : '✗') : verdictLabel(row[owner])}</span
 				>
 			{/if}
 		{/if}
